@@ -5,6 +5,14 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>frontend</title>
+    <script>
+      window.addEventListener('error', function(e) {
+        document.body.innerHTML += '<div id="fatal-error" style="color:red; font-size:20px; z-index:9999; position:absolute; top:0; left:0; background:white; padding:20px; border:2px solid red;">' + e.message + '<br>' + e.filename + ':' + e.lineno + '</div>';
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        document.body.innerHTML += '<div id="fatal-error-promise" style="color:red; font-size:20px; z-index:9999; position:absolute; top:100px; left:0; background:white; padding:20px; border:2px solid red;">Unhandled Promise: ' + e.reason + '</div>';
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

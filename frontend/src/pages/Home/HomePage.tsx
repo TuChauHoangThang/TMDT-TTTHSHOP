@@ -1,15 +1,33 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import HeroSlider from '../../components/HeroSlider/HeroSlider';
 import ProductCard from '../../components/ProductCard/ProductCard';
-import productsData from '../../data/products.json';
+import { productService } from '../../services/productService';
 import type { Product } from '../../types';
 import '../../css/HomePage.css';
 
 const HomePage: React.FC = () => {
-  const products = productsData as Product[];
-  const bestsellerProducts = products.slice(0, 4);
-  const livingRoomProducts = products.slice(4, 9);
+  const [bestsellerProducts, setBestsellerProducts] = useState<Product[]>([]);
+  const [livingRoomProducts, setLivingRoomProducts] = useState<Product[]>([]);
+  const [, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        // Fetch 8 featured products
+        const products = await productService.getFeatured(8);
+        setBestsellerProducts(products.slice(0, 4));
+        setLivingRoomProducts(products.slice(4, 8));
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   return (
     <main id="main-content">

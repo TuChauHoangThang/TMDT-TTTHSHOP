@@ -1,38 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import '../../css/Footer.css';
 
 const Footer: React.FC = () => {
-  const [email, setEmail] = useState('');
-
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    alert(`Đăng ký thành công: ${email}`);
-    setEmail('');
-  };
-
   return (
     <footer className="footer" aria-label="Footer">
       <div className="container">
         
-        <div className="footer-newsletter fade-in visible">
-          <div className="footer-newsletter-text">
-            <h3>Nhận Thông Tin Sớm Nhất</h3>
-            <p>Đăng ký để nhận ưu đãi độc quyền, xu hướng nội thất mới và voucher giảm giá</p>
-          </div>
-          <form className="newsletter-form" onSubmit={handleNewsletterSubmit}>
-            <input 
-              type="email" 
-              placeholder="Nhập địa chỉ email của bạn..." 
-              required 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <button type="submit"><i className="fa fa-paper-plane"></i> Đăng Ký</button>
-          </form>
-        </div>
-
         <div className="footer-main">
           
           <div className="footer-brand">
