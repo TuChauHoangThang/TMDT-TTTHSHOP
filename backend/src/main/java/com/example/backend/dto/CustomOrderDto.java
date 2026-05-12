@@ -86,6 +86,8 @@ public class CustomOrderDto {
     public static class QuoteResponse {
         private Long id;
         private Long contractorId;
+        private String contractorName;
+        private String contractorPhone;
         private Long shopId;
         private String shopName;
         private Double shopRating;
@@ -105,17 +107,21 @@ public class CustomOrderDto {
             r.note = q.getNote();
             r.status = q.getStatus().name();
             r.createdAt = q.getCreatedAt();
-            // TODO: load shopName and shopRating from ShopRepository
             return r;
         }
 
+        // CHỈ GIỮ LẠI ĐÚNG MỘT BỘ GETTER/SETTER NÀY
         public Long getId() { return id; }
         public Long getContractorId() { return contractorId; }
+        public String getContractorName() { return contractorName; }
+        public void setContractorName(String n) { this.contractorName = n; }
+        public String getContractorPhone() { return contractorPhone; }
+        public void setContractorPhone(String p) { this.contractorPhone = p; }
         public Long getShopId() { return shopId; }
         public String getShopName() { return shopName; }
-        public void setShopName(String shopName) { this.shopName = shopName; }
+        public void setShopName(String s) { this.shopName = s; }
         public Double getShopRating() { return shopRating; }
-        public void setShopRating(Double shopRating) { this.shopRating = shopRating; }
+        public void setShopRating(Double r) { this.shopRating = r; }
         public java.math.BigDecimal getQuotedPrice() { return quotedPrice; }
         public Integer getEstimatedDays() { return estimatedDays; }
         public String getNote() { return note; }
