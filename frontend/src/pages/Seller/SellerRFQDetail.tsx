@@ -92,7 +92,6 @@ const SellerRFQDetail: React.FC = () => {
   // Kiểm tra nhà thầu đã báo giá cho đơn này chưa
   const myExistingQuote = order.quotes?.find(q => q.contractorId === user?.id);
   const alreadyQuoted = !!myExistingQuote && myExistingQuote.status !== 'WITHDRAWN';
-
   return (
     <div className="co-page">
       <div className="co-container--wide">
@@ -182,16 +181,21 @@ const SellerRFQDetail: React.FC = () => {
 
             {/* Images */}
             {order.imageUrls && order.imageUrls.length > 0 && (
-              <div className="co-card" style={{ marginTop: '1.25rem' }}>
-                <div className="co-card__header">
-                  <span style={{ fontWeight: 700 }}><i className="fa fa-images" style={{ color: 'var(--color-primary)', marginRight: 6 }}></i>Ảnh tham khảo</span>
-                </div>
-                <div className="co-card__body">
-                  <div className="co-image-gallery">
-                    {order.imageUrls.map((url, idx) => <img key={idx} src={url} alt="ref" />)}
+                <div className="co-card" style={{ marginTop: '1.25rem' }}>
+                  <div className="co-card__header">
+                    <span style={{ fontWeight: 700 }}><i className="fa fa-images" style={{ color: 'var(--color-primary)', marginRight: 6 }}></i>Ảnh tham khảo</span>
+                  </div>
+                  <div className="co-card__body">
+                    <div className="co-image-gallery">
+                      {/* THÊM ĐOẠN MỚI VÀO ĐÂY */}
+                      {order.imageUrls.map((url, idx) => {
+                        // Nếu URL từ DB chưa có http thì nối host Backend (8080) vào
+                        const fullUrl = url.startsWith('http') ? url : `http://localhost:8080${url}`;
+                        return <img key={idx} src={fullUrl} alt="ref" />;
+                      })}
+                    </div>
                   </div>
                 </div>
-              </div>
             )}
 
             {/* Tips for sellers */}
