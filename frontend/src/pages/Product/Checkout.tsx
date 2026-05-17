@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { cartService } from '../../services/cartService';
+import { orderService } from '../../services/orderService';
 import '../../css/Checkout.css';
 
 const fmtVND = (n: number) => n.toLocaleString('vi-VN') + 'đ';
@@ -49,16 +50,14 @@ const Checkout: React.FC = () => {
 
     setSubmitting(true);
     try {
-      // Giả lập gọi API tạo đơn hàng
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await orderService.createOrder(formData);
       
-      // Xóa giỏ hàng sau khi đặt thành công
-      await cartService.clearCart();
       await refreshCart();
 
       alert('Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại TTTH.');
       navigate('/');
     } catch (error) {
+      console.error(error);
       alert('Có lỗi xảy ra khi đặt hàng.');
     } finally {
       setSubmitting(false);

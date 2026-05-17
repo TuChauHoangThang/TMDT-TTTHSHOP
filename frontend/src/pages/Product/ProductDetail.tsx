@@ -4,6 +4,7 @@ import { productService } from '../../services/productService';
 import { cartService } from '../../services/cartService';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { useFavorite } from '../../context/FavoriteContext';
 import type { Product } from '../../types';
 import '../../css/ProductCard.css';
 import './ProductDetail.css';
@@ -18,6 +19,7 @@ const ProductDetail: React.FC = () => {
   
   const { isAuthenticated } = useAuth();
   const { addToCart } = useCart();
+  const { favoriteProductIds, toggleFavorite } = useFavorite();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -55,6 +57,22 @@ const ProductDetail: React.FC = () => {
       alert('Có lỗi xảy ra khi thêm vào giỏ hàng.');
     }
   };
+
+  const handleToggleFavorite = async () => {
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để lưu sản phẩm yêu thích!');
+      navigate('/login');
+      return;
+    }
+    if (!product) return;
+    try {
+      await toggleFavorite(product.id);
+    } catch (error) {
+      alert('Có lỗi xảy ra.');
+    }
+  };
+
+  const isFavorite = product ? favoriteProductIds.includes(product.id) : false;
 
   const formatPrice = (p: number | string | undefined) => {
     if (typeof p === 'number') {
@@ -120,7 +138,9 @@ const ProductDetail: React.FC = () => {
 
           {/* ---- Right: Info & Actions ---- */}
           <div className="pd-info">
-            <div className="pd-category">{product.categoryName || product.category}</div>
+            <div className="pd-category">
+              {product.categoryName || (typeof product.category === 'object' ? (product.category as any).name : product.category)}
+            </div>
             <h1 className="pd-title">{product.name}</h1>
             
             <div className="pd-rating-wrap">
@@ -174,8 +194,8 @@ const ProductDetail: React.FC = () => {
                 <i className="fa fa-bag-shopping"></i> Thêm Vào Giỏ Hàng
               </button>
               
-              <button className="btn btn--outline pd-btn-wishlist">
-                <i className="fa-regular fa-heart"></i>
+              <button className="btn btn--outline pd-btn-wishlist" onClick={handleToggleFavorite}>
+                <i className={`fa-heart ${isFavorite ? 'fa-solid' : 'fa-regular'}`} style={isFavorite ? { color: 'red' } : {}}></i>
               </button>
             </div>
 

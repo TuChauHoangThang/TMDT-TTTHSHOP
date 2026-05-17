@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+import { FavoriteProvider } from './context/FavoriteContext';
 import Header from './components/Header/Header';
 import Footer from './components/Footer/Footer';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
@@ -12,6 +13,7 @@ import ProductList from './pages/Product/ProductList';
 import ProductDetail from './pages/Product/ProductDetail';
 import Cart from './pages/Product/Cart';
 import Checkout from './pages/Product/Checkout';
+import Wishlist from './pages/Product/Wishlist';
 import CustomOrderList from './pages/CustomOrder/CustomOrderList';
 import CreateCustomOrder from './pages/CustomOrder/CreateCustomOrder';
 import CustomOrderDetail from './pages/CustomOrder/CustomOrderDetail';
@@ -22,8 +24,9 @@ import './App.css';
 function App() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <Router>
+      <FavoriteProvider>
+        <CartProvider>
+          <Router>
         <Header />
         <Routes>
           {/* Public routes */}
@@ -36,6 +39,7 @@ function App() {
           <Route path="/product/:slug" element={<ProductDetail />} />
           <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
           <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+          <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
 
           {/* ── Custom Order RFQ (Customer) — requires login ── */}
           <Route path="/custom-orders" element={
@@ -69,7 +73,8 @@ function App() {
         </Routes>
         <Footer />
         </Router>
-      </CartProvider>
+        </CartProvider>
+      </FavoriteProvider>
     </AuthProvider>
   );
 }
