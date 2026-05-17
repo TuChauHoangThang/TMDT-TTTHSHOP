@@ -41,6 +41,9 @@ public class CustomOrderQuote {
     @Column(columnDefinition = "TEXT")
     private String note;
 
+    @Column(name = "image_urls", columnDefinition = "TEXT")
+    private String imageUrls; // Lưu dưới dạng JSON string hoặc comma-separated
+
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private Status status = Status.PENDING;
@@ -75,6 +78,8 @@ public class CustomOrderQuote {
     public void setEstimatedDays(Integer estimatedDays) { this.estimatedDays = estimatedDays; }
     public String getNote() { return note; }
     public void setNote(String note) { this.note = note; }
+    public String getImageUrls() { return imageUrls; }
+    public void setImageUrls(String imageUrls) { this.imageUrls = imageUrls; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
     public LocalDateTime getCreatedAt() { return createdAt; }

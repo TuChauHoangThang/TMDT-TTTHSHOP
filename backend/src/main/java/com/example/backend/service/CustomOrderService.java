@@ -8,6 +8,7 @@ import com.example.backend.entity.User; // Giả sử entity User của bạn �
 import com.example.backend.repository.CustomOrderQuoteRepository;
 import com.example.backend.repository.CustomOrderRequestRepository;
 import com.example.backend.repository.UserRepository; // Repository bảng User
+import com.example.backend.repository.ShopRepository; // Repository bảng Shop
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,13 +31,16 @@ public class CustomOrderService {
     private final CustomOrderRequestRepository requestRepo;
     private final CustomOrderQuoteRepository quoteRepo;
     private final UserRepository userRepo; // Inject thêm UserRepository
+    private final ShopRepository shopRepo; // Inject thêm ShopRepository
 
     public CustomOrderService(CustomOrderRequestRepository requestRepo,
                               CustomOrderQuoteRepository quoteRepo,
-                              UserRepository userRepo) {
+                              UserRepository userRepo,
+                              ShopRepository shopRepo) {
         this.requestRepo = requestRepo;
         this.quoteRepo = quoteRepo;
         this.userRepo = userRepo;
+        this.shopRepo = shopRepo;
         try {
             Files.createDirectories(Paths.get(UPLOAD_DIR));
         } catch (IOException e) {
@@ -51,8 +55,15 @@ public class CustomOrderService {
         userRepo.findById(quoteDto.getContractorId()).ifPresent(user -> {
             quoteDto.setContractorName(user.getFullName()); // Lấy tên từ DB
             quoteDto.setContractorPhone(user.getPhone());       // Lấy SĐT từ DB
-            // Nếu bảng User có thông tin shop, lấy luôn:
-            // quoteDto.setShopName(user.getShopName());
+        });
+
+        // Lấy thông tin Shop
+        shopRepo.findById(quoteDto.getShopId()).ifPresent(shop -> {
+            quoteDto.setShopName(shop.getName());
+            quoteDto.setShopSlug(shop.getSlug());
+            quoteDto.setShopAddress(shop.getAddress());
+            quoteDto.setShopLogo(shop.getLogoUrl());
+            quoteDto.setShopRating(shop.getRating().doubleValue());
         });
     }
 
@@ -199,9 +210,14 @@ public class CustomOrderService {
         return request;
     }
 
-    public CustomOrderQuote submitQuote(Long requestId, Long contractorId, Long shopId, CustomOrderDto.SubmitQuote dto) {
+    public CustomOrderQuote submitQuote(Long requestId, Long contractorId, CustomOrderDto.SubmitQuote dto, List<MultipartFile> images) {
         CustomOrderRequest request = requestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy yêu cầu"));
+
+        // Tự tìm shopId từ contractorId trong DB để đảm bảo chính xác
+        Long shopId = shopRepo.findByOwnerId(contractorId)
+                .map(s -> s.getId())
+                .orElseThrow(() -> new RuntimeException("Bạn cần tạo Shop trước khi báo giá"));
 
         if (request.getStatus() == CustomOrderRequest.Status.IN_PROGRESS ||
                 request.getStatus() == CustomOrderRequest.Status.COMPLETED ||
@@ -220,6 +236,32 @@ public class CustomOrderService {
         quote.setQuotedPrice(dto.getQuotedPrice());
         quote.setEstimatedDays(dto.getEstimatedDays());
         quote.setNote(dto.getNote());
+        if (dto.getImageUrls() != null && !dto.getImageUrls().isEmpty()) {
+            quote.setImageUrls(String.join(",", dto.getImageUrls()));
+        }
+
+        // Xử lý upload ảnh mới nếu có
+        if (images != null && !images.isEmpty()) {
+            List<String> uploadedUrls = new java.util.ArrayList<>();
+            for (MultipartFile file : images) {
+                try {
+                    String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+                    java.nio.file.Path path = java.nio.file.Paths.get("uploads", fileName);
+                    java.nio.file.Files.createDirectories(path.getParent());
+                    java.nio.file.Files.copy(file.getInputStream(), path);
+                    uploadedUrls.add("/uploads/" + fileName);
+                } catch (java.io.IOException e) {
+                    throw new RuntimeException("Lỗi lưu ảnh báo giá: " + e.getMessage());
+                }
+            }
+            String currentUrls = quote.getImageUrls();
+            if (currentUrls != null && !currentUrls.isBlank()) {
+                quote.setImageUrls(currentUrls + "," + String.join(",", uploadedUrls));
+            } else {
+                quote.setImageUrls(String.join(",", uploadedUrls));
+            }
+        }
+
         quote.setStatus(CustomOrderQuote.Status.PENDING);
 
         CustomOrderQuote savedQuote = quoteRepo.save(quote);

@@ -72,6 +72,8 @@ public class CustomOrderDto {
         @Size(max = 2000, message = "Ghi chú tối đa 2000 ký tự")
         private String note;
 
+        private java.util.List<String> imageUrls; // Contractor đính kèm ảnh mẫu
+
         // Getters & Setters
         public BigDecimal getQuotedPrice() { return quotedPrice; }
         public void setQuotedPrice(BigDecimal quotedPrice) { this.quotedPrice = quotedPrice; }
@@ -79,6 +81,8 @@ public class CustomOrderDto {
         public void setEstimatedDays(Integer estimatedDays) { this.estimatedDays = estimatedDays; }
         public String getNote() { return note; }
         public void setNote(String note) { this.note = note; }
+        public java.util.List<String> getImageUrls() { return imageUrls; }
+        public void setImageUrls(java.util.List<String> urls) { this.imageUrls = urls; }
     }
 
     // ==================== RESPONSE DTOs ====================
@@ -90,10 +94,14 @@ public class CustomOrderDto {
         private String contractorPhone;
         private Long shopId;
         private String shopName;
+        private String shopSlug;
+        private String shopAddress;
+        private String shopLogo;
         private Double shopRating;
         private java.math.BigDecimal quotedPrice;
         private Integer estimatedDays;
         private String note;
+        private java.util.List<String> imageUrls;
         private String status;
         private java.time.LocalDateTime createdAt;
 
@@ -105,12 +113,16 @@ public class CustomOrderDto {
             r.quotedPrice = q.getQuotedPrice();
             r.estimatedDays = q.getEstimatedDays();
             r.note = q.getNote();
+            if (q.getImageUrls() != null && !q.getImageUrls().isBlank()) {
+                r.imageUrls = java.util.Arrays.asList(q.getImageUrls().split(","));
+            } else {
+                r.imageUrls = java.util.Collections.emptyList();
+            }
             r.status = q.getStatus().name();
             r.createdAt = q.getCreatedAt();
             return r;
         }
 
-        // CHỈ GIỮ LẠI ĐÚNG MỘT BỘ GETTER/SETTER NÀY
         public Long getId() { return id; }
         public Long getContractorId() { return contractorId; }
         public String getContractorName() { return contractorName; }
@@ -120,11 +132,18 @@ public class CustomOrderDto {
         public Long getShopId() { return shopId; }
         public String getShopName() { return shopName; }
         public void setShopName(String s) { this.shopName = s; }
+        public String getShopSlug() { return shopSlug; }
+        public void setShopSlug(String s) { this.shopSlug = s; }
+        public String getShopAddress() { return shopAddress; }
+        public void setShopAddress(String a) { this.shopAddress = a; }
+        public String getShopLogo() { return shopLogo; }
+        public void setShopLogo(String l) { this.shopLogo = l; }
         public Double getShopRating() { return shopRating; }
         public void setShopRating(Double r) { this.shopRating = r; }
         public java.math.BigDecimal getQuotedPrice() { return quotedPrice; }
         public Integer getEstimatedDays() { return estimatedDays; }
         public String getNote() { return note; }
+        public java.util.List<String> getImageUrls() { return imageUrls; }
         public String getStatus() { return status; }
         public java.time.LocalDateTime getCreatedAt() { return createdAt; }
     }

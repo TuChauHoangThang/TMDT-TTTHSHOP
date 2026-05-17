@@ -6,6 +6,12 @@ import com.example.backend.repository.CategoryRepository;
 import com.example.backend.repository.ProductRepository;
 import com.example.backend.service.CategoryService;
 import com.example.backend.service.ProductService;
+import com.example.backend.entity.User;
+import com.example.backend.entity.Role;
+import com.example.backend.entity.Shop;
+import com.example.backend.repository.UserRepository;
+import com.example.backend.repository.ShopRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -20,20 +26,146 @@ public class DataSeeder implements CommandLineRunner {
     private final ProductRepository productRepository;
     private final CategoryService categoryService;
     private final ProductService productService;
+    private final UserRepository userRepository;
+    private final ShopRepository shopRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public DataSeeder(CategoryRepository categoryRepository, ProductRepository productRepository, CategoryService categoryService, ProductService productService) {
+    public DataSeeder(CategoryRepository categoryRepository, 
+                      ProductRepository productRepository, 
+                      CategoryService categoryService, 
+                      ProductService productService,
+                      UserRepository userRepository,
+                      ShopRepository shopRepository,
+                      PasswordEncoder passwordEncoder) {
         this.categoryRepository = categoryRepository;
         this.productRepository = productRepository;
         this.categoryService = categoryService;
         this.productService = productService;
+        this.userRepository = userRepository;
+        this.shopRepository = shopRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(String... args) throws Exception {
+        // Kiểm tra nếu tài khoản test chưa tồn tại thì mới nạp
+        if (!userRepository.existsByEmail("moclam@test.com")) {
+            System.out.println("Seeding missing Users and Shops...");
+            seedUsersAndShops();
+        }
+
         if (categoryRepository.count() == 0 && productRepository.count() == 0) {
-            System.out.println("Seeding Data...");
+            System.out.println("Seeding Categories and Products...");
             seedCategoriesAndProducts();
             System.out.println("Seeding Completed.");
+        }
+    }
+
+    private void seedUsersAndShops() {
+        // 1. Seed Customer
+        if (!userRepository.existsByEmail("customer@test.com")) {
+            User customer = new User();
+            customer.setFullName("Nguyễn Văn A");
+            customer.setEmail("customer@test.com");
+            customer.setPassword(passwordEncoder.encode("123456"));
+            customer.setPhone("0901234567");
+            customer.setRole(Role.CUSTOMER);
+            userRepository.save(customer);
+        }
+
+        // 2. Seed Contractor 1 (with Shop)
+        if (!userRepository.existsByEmail("seller@test.com")) {
+            User contractor1 = new User();
+            contractor1.setFullName("Trần Thị B");
+            contractor1.setEmail("seller@test.com");
+            contractor1.setPassword(passwordEncoder.encode("123456"));
+            contractor1.setPhone("0909876543");
+            contractor1.setRole(Role.CONTRACTOR);
+            userRepository.save(contractor1);
+
+            Shop shop1 = new Shop();
+            shop1.setOwner(contractor1);
+            shop1.setName("Nội Thất Hiện Đại");
+            shop1.setSlug("noi-that-hien-dai");
+            shop1.setDescription("Chuyên thiết kế và thi công nội thất phong cách hiện đại.");
+            shop1.setAddress("123 Đường ABC, Quận 1, TP.HCM");
+            shop1.setRating(new BigDecimal("4.8"));
+            shop1.setRatingCount(25);
+            shopRepository.save(shop1);
+        }
+
+        // 3. Seed Contractor 2 (with Shop)
+        if (!userRepository.existsByEmail("contractor2@test.com")) {
+            User contractor2 = new User();
+            contractor2.setFullName("Lê Văn C");
+            contractor2.setEmail("contractor2@test.com");
+            contractor2.setPassword(passwordEncoder.encode("123456"));
+            contractor2.setPhone("0901112223");
+            contractor2.setRole(Role.CONTRACTOR);
+            userRepository.save(contractor2);
+
+            Shop shop2 = new Shop();
+            shop2.setOwner(contractor2);
+            shop2.setName("Mộc Decor");
+            shop2.setSlug("moc-decor");
+            shop2.setDescription("Nội thất gỗ tự nhiên cao cấp.");
+            shop2.setAddress("456 Đường XYZ, Quận 7, TP.HCM");
+            shop2.setRating(new BigDecimal("4.5"));
+            shop2.setRatingCount(12);
+            shopRepository.save(shop2);
+        }
+
+        // 4. Seed Contractor 3 (Mộc Lâm Shop)
+        if (!userRepository.existsByEmail("moclam@test.com")) {
+            User contractor3 = new User();
+            contractor3.setFullName("Ngô Mộc Lâm");
+            contractor3.setEmail("moclam@test.com");
+            contractor3.setPassword(passwordEncoder.encode("123456"));
+            contractor3.setPhone("0903334445");
+            contractor3.setRole(Role.CONTRACTOR);
+            userRepository.save(contractor3);
+
+            Shop shop3 = new Shop();
+            shop3.setOwner(contractor3);
+            shop3.setName("Mộc Lâm Shop");
+            shop3.setSlug("moc-lam-shop");
+            shop3.setDescription("Xưởng mộc gia truyền, chuyên đồ gỗ nội thất phòng ngủ.");
+            shop3.setAddress("789 Đường DEF, Quận Bình Tân, TP.HCM");
+            shop3.setRating(new BigDecimal("4.9"));
+            shop3.setRatingCount(50);
+            shopRepository.save(shop3);
+        }
+
+        // 5. Seed Contractor 4 (Liêm Khiết Shop)
+        if (!userRepository.existsByEmail("liemkhiet@test.com")) {
+            User contractor4 = new User();
+            contractor4.setFullName("Phạm Liêm Khiết");
+            contractor4.setEmail("liemkhiet@test.com");
+            contractor4.setPassword(passwordEncoder.encode("123456"));
+            contractor4.setPhone("0905556667");
+            contractor4.setRole(Role.CONTRACTOR);
+            userRepository.save(contractor4);
+
+            Shop shop4 = new Shop();
+            shop4.setOwner(contractor4);
+            shop4.setName("Liêm Khiết Shop");
+            shop4.setSlug("liem-khiet-shop");
+            shop4.setDescription("Nội thất giá xưởng, minh bạch chi phí, chất lượng thật.");
+            shop4.setAddress("101 Đường GHI, Quận 12, TP.HCM");
+            shop4.setRating(new BigDecimal("4.7"));
+            shop4.setRatingCount(30);
+            shopRepository.save(shop4);
+        }
+
+        // 6. Seed Admin
+        if (!userRepository.existsByEmail("admin@test.com")) {
+            User admin = new User();
+            admin.setFullName("Admin TTTH");
+            admin.setEmail("admin@test.com");
+            admin.setPassword(passwordEncoder.encode("123456"));
+            admin.setPhone("0900000001");
+            admin.setRole(Role.ADMIN);
+            userRepository.save(admin);
         }
     }
 

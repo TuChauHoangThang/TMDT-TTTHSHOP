@@ -10,11 +10,14 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 @RestController
 @RequestMapping("/api/auth")
-@RequiredArgsConstructor
-@CrossOrigin(origins = "*") // Mở CORS cho React gọi API
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {

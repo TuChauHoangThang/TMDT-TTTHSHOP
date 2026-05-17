@@ -26,6 +26,7 @@ const CustomOrderDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selecting, setSelecting] = useState<number | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [layout, setLayout] = useState<'list' | 'grid'>('list'); // Thêm toggle layout
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -88,7 +89,7 @@ const CustomOrderDetail: React.FC = () => {
             </div>
           </div>
 
-          <div className="co-detail-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2rem' }}>
+          <div className="co-detail-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: '2rem' }}>
 
             {/* LEFT: Request Details */}
             <div>
@@ -98,7 +99,6 @@ const CustomOrderDetail: React.FC = () => {
                   <i className="fa fa-circle-info" style={{ color: 'var(--color-primary)', marginRight: 8 }}></i>
                   Thông tin yêu cầu
                 </span>
-                  {/* SỬ DỤNG fmtDate Ở ĐÂY ĐỂ HIỂN THỊ NGÀY TẠO ĐƠN */}
                   <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'normal' }}>
                    Ngày tạo: {fmtDate(order.createdAt)}
                 </span>
@@ -165,69 +165,127 @@ const CustomOrderDetail: React.FC = () => {
             {/* RIGHT: Quotes List */}
             <div className="co-quotes-panel">
               <div className="co-card">
-                <div className="co-card__header" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <div className="co-card__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontWeight: 700 }}>
                   <i className="fa fa-tags" style={{ color: 'var(--color-primary)', marginRight: 8 }}></i>
-                  Báo giá
+                  Báo giá ({order.quotes.length})
                 </span>
-                  <span style={{ fontSize: '0.8rem', background: '#eee', padding: '2px 8px', borderRadius: 10 }}>
-                  {order.quotes.length} báo giá
-                </span>
+                  <div className="co-layout-toggle" style={{ display: 'flex', background: '#f5f5f5', borderRadius: 8, padding: 2 }}>
+                    <button 
+                        onClick={() => setLayout('list')}
+                        style={{ border: 'none', background: layout === 'list' ? '#fff' : 'transparent', padding: '4px 8px', borderRadius: 6, cursor: 'pointer', boxShadow: layout === 'list' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none' }}>
+                      <i className="fa fa-list"></i>
+                    </button>
+                    <button 
+                        onClick={() => setLayout('grid')}
+                        style={{ border: 'none', background: layout === 'grid' ? '#fff' : 'transparent', padding: '4px 8px', borderRadius: 6, cursor: 'pointer', boxShadow: layout === 'grid' ? '0 2px 4px rgba(0,0,0,0.1)' : 'none' }}>
+                      <i className="fa fa-th-large"></i>
+                    </button>
+                  </div>
                 </div>
                 <div className="co-card__body" style={{ padding: '1rem' }}>
                   {order.quotes.length === 0 ? (
                       <p style={{ textAlign: 'center', color: '#999', padding: '1rem 0' }}>Chưa có báo giá nào.</p>
                   ) : (
-                      order.quotes.map(q => (
-                          <div key={q.id} className={`co-quote-card ${q.status === 'ACCEPTED' ? 'co-quote-card--accepted' : ''}`}
-                               style={{ border: q.status === 'ACCEPTED' ? '2px solid #2e7d32' : '1px solid #eee', padding: '1rem', borderRadius: 12, marginBottom: '1rem', position: 'relative', background: '#fff' }}>
+                      <div className={`co-quotes-${layout}`} style={{ 
+                        display: layout === 'grid' ? 'grid' : 'block',
+                        gridTemplateColumns: layout === 'grid' ? '1fr 1fr' : 'none',
+                        gap: layout === 'grid' ? '1rem' : '0'
+                      }}>
+                        {order.quotes.map(q => (
+                            <div key={q.id} className={`co-quote-card ${q.status === 'ACCEPTED' ? 'co-quote-card--accepted' : ''}`}
+                                 style={{ 
+                                   border: q.status === 'ACCEPTED' ? '2px solid #2e7d32' : '1px solid #eee', 
+                                   padding: '1.2rem', 
+                                   borderRadius: 16, 
+                                   marginBottom: layout === 'list' ? '1.5rem' : '0', 
+                                   position: 'relative', 
+                                   background: '#fff',
+                                   transition: 'all 0.3s ease',
+                                   boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                                 }}>
 
-                            {q.status === 'ACCEPTED' && (
-                                <div style={{ position: 'absolute', top: -10, right: 10, background: '#2e7d32', color: '#fff', fontSize: '0.7rem', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
-                                  ĐÃ CHỌN
+                              {q.status === 'ACCEPTED' && (
+                                  <div style={{ position: 'absolute', top: -10, right: 10, background: '#2e7d32', color: '#fff', fontSize: '0.7rem', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
+                                    ĐÃ CHỌN
+                                  </div>
+                              )}
+
+                              {/* Contractor & Shop Info */}
+                              <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                                <img 
+                                    src={q.shopLogo ? (q.shopLogo.startsWith('http') ? q.shopLogo : `http://localhost:8080${q.shopLogo}`) : "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"} 
+                                    alt="logo" 
+                                    style={{ width: 50, height: 50, borderRadius: 12, objectFit: 'cover', background: '#f5f5f5' }} 
+                                />
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                    <Link to={`/shops/${q.shopSlug}`} style={{ fontWeight: 700, color: '#333', textDecoration: 'none', fontSize: '1rem' }}>
+                                      {q.shopName}
+                                    </Link>
+                                    <StarRating rating={q.shopRating} />
+                                  </div>
+                                  <div style={{ fontSize: '0.8rem', color: '#666', marginTop: 2 }}>
+                                    <i className="fa fa-location-dot" style={{ marginRight: 5, fontSize: '0.75rem' }}></i>
+                                    {q.shopAddress || "Đang cập nhật địa chỉ"}
+                                  </div>
                                 </div>
-                            )}
-
-                            <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-                              <div style={{ width: 45, height: 45, background: '#f5f5f5', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <i className="fa fa-user-tie" style={{ color: '#999' }}></i>
                               </div>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 700 }}>{q.contractorName || q.shopName}</div>
-                                <div style={{ fontSize: '0.85rem', color: 'var(--color-primary)', fontWeight: 600 }}>
-                                  <i className="fa fa-phone" style={{ marginRight: 5, fontSize: '0.75rem' }}></i>
-                                  {q.contractorPhone ? (
-                                      <a href={`tel:${q.contractorPhone}`} style={{ color: 'inherit', textDecoration: 'none' }}>{q.contractorPhone}</a>
-                                  ) : (
-                                      "Chưa cập nhật SĐT"
-                                  )}
+
+                              {/* Price & Note */}
+                              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: 12, marginBottom: 12, border: '1px solid #f1f5f9' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div style={{ color: '#ef4444', fontWeight: 800, fontSize: '1.2rem' }}>{fmtVND(q.quotedPrice)}</div>
+                                  <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
+                                    <i className="fa fa-truck-fast" style={{ marginRight: 4 }}></i>
+                                    {q.estimatedDays} ngày
+                                  </div>
                                 </div>
-                                <StarRating rating={q.shopRating} />
+                                {q.note && <div style={{ fontSize: '0.85rem', color: '#475569', marginTop: 8, lineHeight: 1.4 }}>"{q.note}"</div>}
                               </div>
+
+                              {/* Quote Demo Images */}
+                              {q.imageUrls && q.imageUrls.length > 0 && (
+                                  <div style={{ marginBottom: 12 }}>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', marginBottom: 6, textTransform: 'uppercase' }}>Ảnh demo từ nhà thầu:</div>
+                                    <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 }}>
+                                      {q.imageUrls.map((imgUrl, i) => (
+                                          <img 
+                                              key={i}
+                                              src={imgUrl.startsWith('http') ? imgUrl : `http://localhost:8080${imgUrl}`} 
+                                              alt="demo" 
+                                              style={{ width: 60, height: 60, borderRadius: 8, objectFit: 'cover', flexShrink: 0, border: '1px solid #eee' }} 
+                                          />
+                                      ))}
+                                    </div>
+                                  </div>
+                              )}
+
+                              {/* Action */}
+                              {canSelectQuote && q.status === 'PENDING' && (
+                                  <button
+                                      className="btn btn--primary"
+                                      style={{ width: '100%', fontSize: '0.85rem', padding: '10px', borderRadius: 10 }}
+                                      onClick={() => handleSelectQuote(q)}
+                                      disabled={selecting === q.id}
+                                  >
+                                    {selecting === q.id ? 'Đang xử lý...' : 'Chọn báo giá này'}
+                                  </button>
+                              )}
+                              
+                              {q.status === 'ACCEPTED' && (
+                                  <div style={{ display: 'flex', gap: 8 }}>
+                                    <a href={`tel:${q.contractorPhone}`} className="btn" style={{ flex: 1, background: '#f1f5f9', color: '#334155', fontSize: '0.8rem', textAlign: 'center', textDecoration: 'none', padding: '8px 0', borderRadius: 8 }}>
+                                      <i className="fa fa-phone" style={{ marginRight: 5 }}></i> Gọi điện
+                                    </a>
+                                    <button className="btn btn--primary" style={{ flex: 1, fontSize: '0.8rem', padding: '8px 0', borderRadius: 8 }}>
+                                      <i className="fa fa-comments" style={{ marginRight: 5 }}></i> Nhắn tin
+                                    </button>
+                                  </div>
+                              )}
                             </div>
-
-                            <div style={{ background: '#f9f9f9', padding: '8px 12px', borderRadius: 8, marginBottom: 10 }}>
-                              <div style={{ color: '#c62828', fontWeight: 800, fontSize: '1.1rem' }}>{fmtVND(q.quotedPrice)}</div>
-                              <div style={{ fontSize: '0.8rem', color: '#666' }}>
-                                <i className="fa fa-clock" style={{ marginRight: 4 }}></i>
-                                Hoàn thành trong: {q.estimatedDays} ngày
-                              </div>
-                            </div>
-
-                            {q.note && <div style={{ fontSize: '0.85rem', color: '#555', fontStyle: 'italic', marginBottom: 12, paddingLeft: 8, borderLeft: '2px solid #eee' }}>"{q.note}"</div>}
-
-                            {canSelectQuote && q.status === 'PENDING' && (
-                                <button
-                                    className="btn btn--primary"
-                                    style={{ width: '100%', fontSize: '0.85rem' }}
-                                    onClick={() => handleSelectQuote(q)}
-                                    disabled={selecting === q.id}
-                                >
-                                  {selecting === q.id ? 'Đang xử lý...' : 'Chọn báo giá này'}
-                                </button>
-                            )}
-                          </div>
-                      ))
+                        ))}
+                      </div>
                   )}
                 </div>
               </div>

@@ -10,6 +10,8 @@ import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import ProductList from './pages/Product/ProductList';
 import ProductDetail from './pages/Product/ProductDetail';
+import Cart from './pages/Product/Cart';
+import Checkout from './pages/Product/Checkout';
 import CustomOrderList from './pages/CustomOrder/CustomOrderList';
 import CreateCustomOrder from './pages/CustomOrder/CreateCustomOrder';
 import CustomOrderDetail from './pages/CustomOrder/CustomOrderDetail';
@@ -32,6 +34,8 @@ function App() {
           {/* ── Products ── */}
           <Route path="/products" element={<ProductList />} />
           <Route path="/product/:slug" element={<ProductDetail />} />
+          <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
+          <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
 
           {/* ── Custom Order RFQ (Customer) — requires login ── */}
           <Route path="/custom-orders" element={

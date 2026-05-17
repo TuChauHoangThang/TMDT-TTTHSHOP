@@ -6,16 +6,23 @@ import com.example.backend.dto.auth.RegisterRequest;
 import com.example.backend.entity.Role;
 import com.example.backend.entity.User;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.repository.ShopRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final ShopRepository shopRepository;
     private final PasswordEncoder passwordEncoder;
+
+    public AuthService(UserRepository userRepository, ShopRepository shopRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.shopRepository = shopRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -39,7 +46,8 @@ public class AuthService {
                 user.getId(),
                 user.getFullName(),
                 user.getEmail(),
-                user.getRole().name() // Lúc này getRole() trả về Enum Role nên sẽ có hàm .name()
+                user.getRole().name(),
+                null // Mới đăng ký là CUSTOMER, chưa có shop
         );
 
         return new AuthResponse(token, userDto);
@@ -59,11 +67,19 @@ public class AuthService {
 
         String token = "fake-jwt-token-for-" + user.getEmail();
 
+        Long shopId = null;
+        if (user.getRole() == Role.CONTRACTOR) {
+            shopId = shopRepository.findByOwnerId(user.getId())
+                    .map(s -> s.getId())
+                    .orElse(null);
+        }
+
         AuthResponse.UserResponse userDto = new AuthResponse.UserResponse(
                 user.getId(),
                 user.getFullName(),
                 user.getEmail(),
-                user.getRole().name()
+                user.getRole().name(),
+                shopId
         );
 
         return new AuthResponse(token, userDto);

@@ -43,6 +43,7 @@ export interface CustomOrderQuote {
   // Thông tin cửa hàng/doanh nghiệp
   shopId: number;
   shopName: string;
+  shopSlug?: string;
   shopLogo?: string;
   shopRating: number;
   shopAddress?: string;      // Địa chỉ cửa hàng từ DB (Bổ sung mới)
@@ -53,6 +54,7 @@ export interface CustomOrderQuote {
   estimatedDays: number;
   note: string;
   status: QuoteStatus;
+  imageUrls?: string[];      // Ảnh báo giá/demo của nhà thầu
 
   createdAt: string;
   updatedAt: string;
@@ -106,4 +108,5 @@ export interface SubmitQuoteDto {
   quotedPrice: number | '';
   estimatedDays: number | '';
   note: string;
+  imageUrls?: string[];       // Danh sách link ảnh đã upload
 }

@@ -23,6 +23,7 @@ const SellerRFQDetail: React.FC = () => {
   const [quote, setQuote] = useState<SubmitQuoteDto>({
     quotedPrice: '', estimatedDays: '', note: '',
   });
+  const [images, setImages] = useState<File[]>([]); // Thêm state cho ảnh báo giá
   const [completionDate, setCompletionDate] = useState('');
 
   useEffect(() => {
@@ -60,7 +61,7 @@ const SellerRFQDetail: React.FC = () => {
         quotedPrice: Number(quote.quotedPrice) * 1000,
         estimatedDays: Number(quote.estimatedDays),
         note: quote.note
-      });
+      }, images);
       setSubmitted(true);
       showToast('Báo giá đã được gửi thành công! Chúng tôi sẽ thông báo khi khách hàng phản hồi.');
     } catch (err: any) {
@@ -353,6 +354,42 @@ const SellerRFQDetail: React.FC = () => {
                     onChange={e => setQuote(q => ({ ...q, note: e.target.value }))}
                     rows={5}
                   />
+                </div>
+
+                {/* IMAGE UPLOAD */}
+                <div className="co-field">
+                  <label className="co-label">Ảnh báo giá / Demo (Tùy chọn)</label>
+                  <div className="co-image-upload-wrapper" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    {images.map((img, idx) => (
+                      <div key={idx} className="co-image-preview" style={{ position: 'relative' }}>
+                        <img 
+                          src={URL.createObjectURL(img)} 
+                          alt="preview" 
+                          style={{ width: 80, height: 80, borderRadius: 8, objectFit: 'cover', border: '1px solid #ddd' }} 
+                        />
+                        <button 
+                          onClick={() => setImages(prev => prev.filter((_, i) => i !== idx))}
+                          style={{ position: 'absolute', top: -5, right: -5, background: '#ff4d4f', color: '#fff', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', fontSize: '10px' }}>
+                          <i className="fa fa-times"></i>
+                        </button>
+                      </div>
+                    ))}
+                    <label className="co-upload-btn" style={{ width: 80, height: 80, border: '2px dashed #ccc', borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#888' }}>
+                      <i className="fa fa-plus"></i>
+                      <span style={{ fontSize: '0.65rem', marginTop: 4 }}>Thêm ảnh</span>
+                      <input 
+                        type="file" 
+                        multiple 
+                        hidden 
+                        accept="image/*" 
+                        onChange={e => {
+                          if (e.target.files) {
+                            setImages(prev => [...prev, ...Array.from(e.target.files!)]);
+                          }
+                        }} 
+                      />
+                    </label>
+                  </div>
                 </div>
 
                 {/* Price vs Budget comparison */}

@@ -16,8 +16,9 @@ const getContractorHeaders = () => {
   const userStr = localStorage.getItem('auth_user');
   if (userStr) {
     const user = JSON.parse(userStr);
-    // Giả lập Shop ID luôn = 1 cho đơn giản
-    return { 'X-Contractor-Id': String(user.id), 'X-Shop-Id': '1' };
+    return { 
+      'X-Contractor-Id': String(user.id)
+    };
   }
   return {};
 };
@@ -27,12 +28,8 @@ export const customOrderService = {
 
   createRequest: async (data: any, images: File[]) => {
     const formData = new FormData();
-    // Spring Boot expects the DTO as a JSON string or blob in the "data" part
     formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
-    
-    images.forEach(img => {
-      formData.append('images', img);
-    });
+    images.forEach(img => formData.append('images', img));
 
     const response = await axios.post(API_URL, formData, {
       headers: {
@@ -75,8 +72,19 @@ export const customOrderService = {
     return response.data;
   },
 
-  submitQuote: async (id: number, data: { quotedPrice: number, estimatedDays: number, note: string }): Promise<CustomOrderQuote> => {
-    const response = await axios.post(`${API_URL}/${id}/quotes`, data, { headers: getContractorHeaders() });
+  submitQuote: async (id: number, data: { quotedPrice: number, estimatedDays: number, note: string }, images?: File[]): Promise<CustomOrderQuote> => {
+    const formData = new FormData();
+    formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
+    if (images) {
+      images.forEach(img => formData.append('images', img));
+    }
+
+    const response = await axios.post(`${API_URL}/${id}/quotes`, formData, { 
+      headers: {
+        ...getContractorHeaders(),
+        'Content-Type': 'multipart/form-data',
+      } 
+    });
     return response.data;
   },
 

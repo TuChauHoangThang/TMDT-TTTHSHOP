@@ -114,16 +114,16 @@ public class CustomOrderController {
         }
     }
 
-    @PostMapping("/{id}/quotes")
+    @PostMapping(value = "/{id}/quotes", consumes = "multipart/form-data")
     public ResponseEntity<?> submitQuote(
             @PathVariable Long id,
             @RequestHeader("X-Contractor-Id") Long contractorId,
-            @RequestHeader("X-Shop-Id") Long shopId,
-            @RequestBody @Valid CustomOrderDto.SubmitQuote dto) {
+            @RequestPart("data") @Valid CustomOrderDto.SubmitQuote dto,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images) {
         try {
-            CustomOrderQuote quote = service.submitQuote(id, contractorId, shopId, dto);
+            CustomOrderQuote quote = service.submitQuote(id, contractorId, dto, images);
             return ResponseEntity.ok(CustomOrderDto.QuoteResponse.from(quote));
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
