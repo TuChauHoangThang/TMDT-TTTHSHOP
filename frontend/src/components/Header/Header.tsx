@@ -206,13 +206,12 @@ const Header: React.FC = () => {
                           </div>
 
                           {[
-                            { icon: 'fa-user', label: 'Hồ sơ cá nhân', to: '/profile' },
-                            { icon: 'fa-clipboard-list', label: 'Đơn hàng của tôi', to: '/orders' },
-                            { icon: 'fa-pencil-ruler', label: 'Yêu cầu đặt hàng', to: '/custom-orders' },
-                            { icon: 'fa-heart', label: 'Danh sách yêu thích', to: '/wishlist' },
-                            ...(user.role === 'CONTRACTOR' ? [{ icon: 'fa-store', label: 'Seller Dashboard', to: '/seller/dashboard' }, { icon: 'fa-tags', label: 'Yêu cầu từ KH', to: '/seller/rfq' }] : []),
-                            ...( (user.role as string) === 'ADMIN' ? [{ icon: 'fa-gauge', label: 'Admin Dashboard', to: '/admin/dashboard' }] : []),
-                          ].map(item => (
+                            { icon: 'fa-user', label: 'Tài Khoản Của Tôi', to: '/customer/dashboard', roles: ['CUSTOMER'] },
+                            { icon: 'fa-store', label: 'Kênh Nhà Thầu', to: '/contractor/dashboard', roles: ['CONTRACTOR'] },
+                            { icon: 'fa-heart', label: 'Danh sách yêu thích', to: '/wishlist', roles: ['CUSTOMER', 'CONTRACTOR', 'ADMIN'] }
+                          ]
+                          .filter(item => item.roles.includes(user.role as string))
+                          .map(item => (
                               <Link
                                   key={item.to}
                                   to={item.to}

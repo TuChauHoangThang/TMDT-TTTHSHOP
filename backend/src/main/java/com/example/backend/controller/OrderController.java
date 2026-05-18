@@ -31,4 +31,16 @@ public class OrderController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping
+    public ResponseEntity<?> getOrders(@RequestHeader(value = "X-Customer-Id", required = false) String customerId) {
+        if (customerId == null || customerId.isEmpty()) {
+            return ResponseEntity.badRequest().body("Customer ID is missing");
+        }
+        try {
+            return ResponseEntity.ok(orderService.getOrdersByCustomer(customerId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

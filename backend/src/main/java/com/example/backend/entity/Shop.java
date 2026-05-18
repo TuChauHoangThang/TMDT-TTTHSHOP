@@ -1,11 +1,13 @@
 package com.example.backend.entity;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "shops")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "owner"})
 public class Shop {
 
     @Id

@@ -89,6 +89,7 @@ public class CustomOrderDto {
 
     public static class QuoteResponse {
         private Long id;
+        private Long requestId;
         private Long contractorId;
         private String contractorName;
         private String contractorPhone;
@@ -108,6 +109,9 @@ public class CustomOrderDto {
         public static QuoteResponse from(com.example.backend.entity.CustomOrderQuote q) {
             QuoteResponse r = new QuoteResponse();
             r.id = q.getId();
+            if (q.getRequest() != null) {
+                r.requestId = q.getRequest().getId();
+            }
             r.contractorId = q.getContractorId();
             r.shopId = q.getShopId();
             r.quotedPrice = q.getQuotedPrice();
@@ -124,6 +128,7 @@ public class CustomOrderDto {
         }
 
         public Long getId() { return id; }
+        public Long getRequestId() { return requestId; }
         public Long getContractorId() { return contractorId; }
         public String getContractorName() { return contractorName; }
         public void setContractorName(String n) { this.contractorName = n; }

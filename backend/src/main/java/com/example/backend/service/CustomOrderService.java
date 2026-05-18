@@ -210,6 +210,11 @@ public class CustomOrderService {
         return request;
     }
 
+    @Transactional(readOnly = true)
+    public List<CustomOrderQuote> getActiveProjects(Long contractorId) {
+        return quoteRepo.findByContractorIdAndStatus(contractorId, CustomOrderQuote.Status.ACCEPTED);
+    }
+
     public CustomOrderQuote submitQuote(Long requestId, Long contractorId, CustomOrderDto.SubmitQuote dto, List<MultipartFile> images) {
         CustomOrderRequest request = requestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy yêu cầu"));
