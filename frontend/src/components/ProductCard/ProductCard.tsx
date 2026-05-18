@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { Product } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { useFavorite } from '../../context/FavoriteContext';
 import '../../css/ProductCard.css';
 
 interface ProductCardProps {
@@ -12,7 +13,25 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { isAuthenticated } = useAuth();
   const { addToCart } = useCart();
+  const { favoriteProductIds, toggleFavorite } = useFavorite();
   const navigate = useNavigate();
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigating if wrapped in Link
+    e.stopPropagation();
+    if (!isAuthenticated) {
+      alert('Vui lòng đăng nhập để lưu sản phẩm yêu thích!');
+      navigate('/login');
+      return;
+    }
+    try {
+      await toggleFavorite(product.id);
+    } catch (error) {
+      alert('Có lỗi xảy ra.');
+    }
+  };
+
+  const isFavorite = favoriteProductIds.includes(product.id);
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
@@ -47,8 +66,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         )}
 
         <div className="product-card-actions">
-          <button className="product-action-btn wishlist-btn" aria-label="Yêu thích">
-            <i className="fa fa-heart"></i>
+          <button className="product-action-btn wishlist-btn" aria-label="Yêu thích" onClick={handleToggleFavorite}>
+            <i className={`fa-heart ${isFavorite ? 'fa-solid' : 'fa-regular'}`} style={isFavorite ? { color: 'red' } : {}}></i>
           </button>
           <Link to={`/product/${product.slug}`} className="product-action-btn" aria-label="Xem nhanh">
             <i className="fa fa-eye"></i>
@@ -62,7 +81,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </div>
       </div>
       <div className="product-card-body">
-        <div className="product-card-category">{product.categoryName || product.category}</div>
+        <div className="product-card-category">
+          {product.categoryName || (typeof product.category === 'object' ? (product.category as any).name : product.category)}
+        </div>
         <Link to={`/product/${product.slug}`} className="product-card-name">
           {product.name}
         </Link>

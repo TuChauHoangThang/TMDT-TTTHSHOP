@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
+import { useFavorite } from '../../context/FavoriteContext';
 import '../../css/Header.css';
 import logoImg from '../../assets/Logo.jpeg';
 
 const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { itemCount } = useCart();
+  const { favoriteProductIds } = useFavorite();
   const navigate = useNavigate();
 
   const [scrolled, setScrolled] = useState(false);
@@ -148,6 +150,11 @@ const Header: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              <Link to="/wishlist" className="header-action-btn" aria-label="Yêu thích">
+                <i className="fa-regular fa-heart"></i>
+                {favoriteProductIds.length > 0 && <span className="cart-badge">{favoriteProductIds.length}</span>}
+              </Link>
 
               <Link to="/cart" className="header-action-btn">
                 <i className="fa fa-bag-shopping"></i>
