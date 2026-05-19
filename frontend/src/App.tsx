@@ -25,6 +25,8 @@ import ContractorDashboard from './pages/Contractor/ContractorDashboard';
 import ContractorProfile from './pages/Contractor/ContractorProfile';
 import CustomerLayout from './pages/Customer/CustomerLayout';
 import CustomerDashboard from './pages/Customer/CustomerDashboard';
+import CustomerOrders from './pages/Customer/CustomerOrders';
+import CustomerWishlist from './pages/Customer/CustomerWishlist';
 import UserProfile from './pages/User/UserProfile';
 import './App.css';
 
@@ -78,9 +80,10 @@ function App() {
               {/* ── Customer Dashboard ── */}
               <Route path="/customer" element={<ProtectedRoute><CustomerLayout /></ProtectedRoute>}>
                 <Route path="dashboard" element={<CustomerDashboard />} />
+                <Route path="orders" element={<CustomerOrders />} />
                 <Route path="profile" element={<UserProfile />} />
-                <Route path="address" element={<div style={{padding:30}}><h3>🛠 Sổ địa chỉ — Đang phát triển</h3></div>} />
-                <Route path="custom-orders" element={<div style={{padding:30}}><h3>🛠 Yêu cầu Custom — Đang phát triển</h3></div>} />
+                <Route path="custom-orders" element={<CustomOrderList />} />
+                <Route path="wishlist" element={<CustomerWishlist />} />
               </Route>
             </Routes>
           </Router>
