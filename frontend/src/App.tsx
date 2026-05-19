@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { FavoriteProvider } from './context/FavoriteContext';
@@ -19,7 +19,24 @@ import CreateCustomOrder from './pages/CustomOrder/CreateCustomOrder';
 import CustomOrderDetail from './pages/CustomOrder/CustomOrderDetail';
 import SellerRFQList from './pages/Seller/SellerRFQList';
 import SellerRFQDetail from './pages/Seller/SellerRFQDetail';
+
+import ContractorLayout from './pages/Contractor/ContractorLayout';
+import ContractorDashboard from './pages/Contractor/ContractorDashboard';
+import ContractorProfile from './pages/Contractor/ContractorProfile';
+import CustomerLayout from './pages/Customer/CustomerLayout';
+import CustomerDashboard from './pages/Customer/CustomerDashboard';
+import CustomerOrders from './pages/Customer/CustomerOrders';
+import CustomerWishlist from './pages/Customer/CustomerWishlist';
+import CustomerProfile from './pages/Customer/CustomerProfile';
 import './App.css';
+
+const MainLayout = () => (
+  <>
+    <Header />
+    <Outlet />
+    <Footer />
+  </>
+);
 
 function App() {
   return (
@@ -27,52 +44,48 @@ function App() {
       <FavoriteProvider>
         <CartProvider>
           <Router>
-        <Header />
-        <Routes>
-          {/* Public routes */}
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+            <Routes>
+              {/* ── Routes WITH Header & Footer ── */}
+              <Route element={<MainLayout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
 
-          {/* ── Products ── */}
-          <Route path="/products" element={<ProductList />} />
-          <Route path="/product/:slug" element={<ProductDetail />} />
-          <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
-          <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-          <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+                <Route path="/products" element={<ProductList />} />
+                <Route path="/product/:slug" element={<ProductDetail />} />
+                <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
+                <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+                <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
 
-          {/* ── Custom Order RFQ (Customer) — requires login ── */}
-          <Route path="/custom-orders" element={
-            <ProtectedRoute><CustomOrderList /></ProtectedRoute>
-          } />
-          <Route path="/custom-orders/create" element={
-            <ProtectedRoute><CreateCustomOrder /></ProtectedRoute>
-          } />
-          <Route path="/custom-orders/:id" element={
-            <ProtectedRoute><CustomOrderDetail /></ProtectedRoute>
-          } />
+                <Route path="/custom-orders" element={<ProtectedRoute><CustomOrderList /></ProtectedRoute>} />
+                <Route path="/custom-orders/create" element={<ProtectedRoute><CreateCustomOrder /></ProtectedRoute>} />
+                <Route path="/custom-orders/:id" element={<ProtectedRoute><CustomOrderDetail /></ProtectedRoute>} />
 
-          {/* ── Seller / Contractor RFQ — requires CONTRACTOR role ── */}
-          <Route path="/seller/rfq" element={
-            <ProtectedRoute allowedRoles={['CONTRACTOR', 'ADMIN']}>
-              <SellerRFQList />
-            </ProtectedRoute>
-          } />
-          <Route path="/seller/rfq/:id" element={
-            <ProtectedRoute allowedRoles={['CONTRACTOR', 'ADMIN']}>
-              <SellerRFQDetail />
-            </ProtectedRoute>
-          } />
+                <Route path="*" element={
+                  <div className="container section" style={{ minHeight: '50vh', paddingTop: '6rem' }}>
+                    <h3>🚧 Đang phát triển...</h3>
+                  </div>
+                } />
+              </Route>
 
-          {/* Fallback */}
-          <Route path="*" element={
-            <div className="container section" style={{ minHeight: '50vh', paddingTop: '6rem' }}>
-              <h3>🚧 Đang phát triển...</h3>
-            </div>
-          } />
-        </Routes>
-        <Footer />
-        </Router>
+              {/* ── Contractor Dashboard ── */}
+              <Route path="/contractor" element={<ProtectedRoute allowedRoles={['CONTRACTOR', 'ADMIN']}><ContractorLayout /></ProtectedRoute>}>
+                <Route path="dashboard" element={<ContractorDashboard />} />
+                <Route path="profile" element={<ContractorProfile />} />
+                <Route path="rfq" element={<SellerRFQList />} />
+                <Route path="rfq/:id" element={<SellerRFQDetail />} />
+              </Route>
+
+              {/* ── Customer Dashboard ── */}
+              <Route path="/customer" element={<ProtectedRoute><CustomerLayout /></ProtectedRoute>}>
+                <Route path="dashboard" element={<CustomerDashboard />} />
+                <Route path="orders" element={<CustomerOrders />} />
+                <Route path="profile" element={<CustomerProfile />} />
+                <Route path="custom-orders" element={<CustomOrderList />} />
+                <Route path="wishlist" element={<CustomerWishlist />} />
+              </Route>
+            </Routes>
+          </Router>
         </CartProvider>
       </FavoriteProvider>
     </AuthProvider>

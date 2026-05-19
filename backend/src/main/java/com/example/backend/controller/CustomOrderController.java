@@ -114,6 +114,19 @@ public class CustomOrderController {
         }
     }
 
+    @GetMapping("/contractor/projects")
+    public ResponseEntity<?> getActiveProjects(@RequestHeader("X-Contractor-Id") Long contractorId) {
+        try {
+            List<CustomOrderQuote> projects = service.getActiveProjects(contractorId);
+            List<CustomOrderDto.QuoteResponse> response = projects.stream()
+                .map(CustomOrderDto.QuoteResponse::from)
+                .toList();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping(value = "/{id}/quotes", consumes = "multipart/form-data")
     public ResponseEntity<?> submitQuote(
             @PathVariable Long id,

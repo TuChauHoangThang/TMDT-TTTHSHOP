@@ -98,9 +98,9 @@ const SellerRFQDetail: React.FC = () => {
       <div className="co-container--wide">
         <div className="co-page-header">
           <div className="co-breadcrumb">
-            <Link to="/seller/dashboard">Dashboard</Link>
+            <Link to="/contractor/dashboard">Dashboard</Link>
             <i className="fa fa-chevron-right" style={{ fontSize: '0.6rem' }}></i>
-            <Link to="/seller/rfq">Yêu cầu khách hàng</Link>
+            <Link to="/contractor/rfq">Yêu cầu khách hàng</Link>
             <i className="fa fa-chevron-right" style={{ fontSize: '0.6rem' }}></i>
             <span>Chi tiết #{order.id}</span>
           </div>
@@ -268,7 +268,7 @@ const SellerRFQDetail: React.FC = () => {
                       }
                     </button>
                   )}
-                  <Link to="/seller/rfq" className="btn btn--outline" style={{ width: '100%', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
+                  <Link to="/contractor/rfq" className="btn btn--outline" style={{ width: '100%', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
                     <i className="fa fa-arrow-left"></i> Xem yêu cầu khác
                   </Link>
                 </div>
@@ -281,7 +281,7 @@ const SellerRFQDetail: React.FC = () => {
                   <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
                     Khách hàng sẽ xem xét và thông báo kết quả sớm nhất có thể.
                   </p>
-                  <Link to="/seller/rfq" className="btn btn--outline">
+                  <Link to="/contractor/rfq" className="btn btn--outline">
                     <i className="fa fa-arrow-left"></i> Xem yêu cầu khác
                   </Link>
                 </div>

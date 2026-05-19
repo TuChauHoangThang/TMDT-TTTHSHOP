@@ -66,4 +66,9 @@ public class OrderService {
 
         return savedOrder;
     }
+
+    @Transactional(readOnly = true)
+    public List<Order> getOrdersByCustomer(String customerId) {
+        return orderRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
+    }
 }
