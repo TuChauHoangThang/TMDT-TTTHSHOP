@@ -27,7 +27,7 @@ import CustomerLayout from './pages/Customer/CustomerLayout';
 import CustomerDashboard from './pages/Customer/CustomerDashboard';
 import CustomerOrders from './pages/Customer/CustomerOrders';
 import CustomerWishlist from './pages/Customer/CustomerWishlist';
-import UserProfile from './pages/User/UserProfile';
+import CustomerProfile from './pages/Customer/CustomerProfile';
 import './App.css';
 
 const MainLayout = () => (
@@ -61,9 +61,6 @@ function App() {
                 <Route path="/custom-orders/create" element={<ProtectedRoute><CreateCustomOrder /></ProtectedRoute>} />
                 <Route path="/custom-orders/:id" element={<ProtectedRoute><CustomOrderDetail /></ProtectedRoute>} />
 
-                <Route path="/seller/rfq" element={<ProtectedRoute allowedRoles={['CONTRACTOR', 'ADMIN']}><SellerRFQList /></ProtectedRoute>} />
-                <Route path="/seller/rfq/:id" element={<ProtectedRoute allowedRoles={['CONTRACTOR', 'ADMIN']}><SellerRFQDetail /></ProtectedRoute>} />
-
                 <Route path="*" element={
                   <div className="container section" style={{ minHeight: '50vh', paddingTop: '6rem' }}>
                     <h3>🚧 Đang phát triển...</h3>
@@ -75,13 +72,15 @@ function App() {
               <Route path="/contractor" element={<ProtectedRoute allowedRoles={['CONTRACTOR', 'ADMIN']}><ContractorLayout /></ProtectedRoute>}>
                 <Route path="dashboard" element={<ContractorDashboard />} />
                 <Route path="profile" element={<ContractorProfile />} />
+                <Route path="rfq" element={<SellerRFQList />} />
+                <Route path="rfq/:id" element={<SellerRFQDetail />} />
               </Route>
 
               {/* ── Customer Dashboard ── */}
               <Route path="/customer" element={<ProtectedRoute><CustomerLayout /></ProtectedRoute>}>
                 <Route path="dashboard" element={<CustomerDashboard />} />
                 <Route path="orders" element={<CustomerOrders />} />
-                <Route path="profile" element={<UserProfile />} />
+                <Route path="profile" element={<CustomerProfile />} />
                 <Route path="custom-orders" element={<CustomOrderList />} />
                 <Route path="wishlist" element={<CustomerWishlist />} />
               </Route>

@@ -112,7 +112,7 @@ const SellerRFQList: React.FC = () => {
                     key={order.id}
                     className="co-rfq-card"
                     id={`rfq-card-${order.id}`}
-                    onClick={() => navigate(`/seller/rfq/${order.id}`)}
+                    onClick={() => navigate(`/contractor/rfq/${order.id}`)}
                     style={{ cursor: 'pointer' }}
                   >
                     <div className="co-rfq-card__top">
@@ -143,7 +143,7 @@ const SellerRFQList: React.FC = () => {
                 );
               } else {
                 return (
-                  <div key={order.id} className="co-list-item" onClick={() => navigate(`/seller/rfq/${order.id}`)} style={{ cursor: 'pointer' }}>
+                  <div key={order.id} className="co-list-item" onClick={() => navigate(`/contractor/rfq/${order.id}`)} style={{ cursor: 'pointer' }}>
                     <div className="co-list-item__icon" style={{ background: urgent ? '#fff1f0' : '#f6ffed' }}>
                       <i className={`fa ${urgent ? 'fa-hourglass-half' : 'fa-clipboard-list'}`} style={{ color: urgent ? '#cf1322' : '#389e0d' }}></i>
                     </div>
