@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { orderService } from '../../services/orderService';
@@ -43,7 +44,7 @@ const Checkout: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || !formData.phone || !formData.address) {
-      alert('Vui lòng điền đầy đủ thông tin giao hàng!');
+      toast.warning('Vui lòng điền đầy đủ thông tin giao hàng!');
       return;
     }
 
@@ -56,12 +57,12 @@ const Checkout: React.FC = () => {
       if (formData.paymentMethod === 'VNPAY' && response.paymentUrl) {
         window.location.href = response.paymentUrl;
       } else {
-        alert('Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại TTTH.');
-        navigate('/');
+        toast.success('Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại TTTH.');
+        navigate('/customer/orders');
       }
     } catch (error) {
       console.error(error);
-      alert('Có lỗi xảy ra khi đặt hàng.');
+      toast.error('Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!');
     } finally {
       setSubmitting(false);
     }

@@ -106,4 +106,18 @@ public class OrderController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getOrderById(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Customer-Id", required = false) String customerId) {
+        if (customerId == null || customerId.isEmpty()) {
+            return ResponseEntity.badRequest().body("Customer ID is missing");
+        }
+        try {
+            return ResponseEntity.ok(orderService.getOrderById(id, customerId));
+        } catch (Exception e) {
+            return ResponseEntity.status(404).body(e.getMessage());
+        }
+    }
 }
