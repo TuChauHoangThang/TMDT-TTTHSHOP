@@ -22,6 +22,9 @@ import CreateCustomOrder from './pages/CustomOrder/CreateCustomOrder';
 import CustomOrderDetail from './pages/CustomOrder/CustomOrderDetail';
 import SellerRFQList from './pages/Seller/SellerRFQList';
 import SellerRFQDetail from './pages/Seller/SellerRFQDetail';
+import ContactPage from './pages/Contact/ContactPage';
+import AboutPage from './pages/About/AboutPage';
+import ScrollToTop from './components/ScrollToTop/ScrollToTop';
 
 import ContractorLayout from './pages/Contractor/ContractorLayout';
 import ContractorDashboard from './pages/Contractor/ContractorDashboard';
@@ -54,6 +57,7 @@ function App() {
       <FavoriteProvider>
         <CartProvider>
           <Router>
+            <ScrollToTop />
             <Routes>
               {/* ── Routes WITH Header & Footer ── */}
               <Route element={<MainLayout />}>
@@ -68,9 +72,11 @@ function App() {
                 <Route path="/checkout/vnpay-callback" element={<VNPayCallback />} />
                 <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
 
+                <Route path="/about" element={<AboutPage />} />
                 <Route path="/custom-orders" element={<ProtectedRoute><CustomOrderList /></ProtectedRoute>} />
                 <Route path="/custom-orders/create" element={<ProtectedRoute><CreateCustomOrder /></ProtectedRoute>} />
                 <Route path="/custom-orders/:id" element={<ProtectedRoute><CustomOrderDetail /></ProtectedRoute>} />
+                <Route path="/contact" element={<ContactPage />} />
 
                 <Route path="*" element={
                   <div className="container section" style={{ minHeight: '50vh', paddingTop: '6rem' }}>
