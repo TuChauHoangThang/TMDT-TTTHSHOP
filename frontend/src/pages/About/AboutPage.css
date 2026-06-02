@@ -8,7 +8,7 @@
 }
 
 /* 1. Hero Section */
-.about-hero {
+.about-page-container .about-hero {
   height: 60vh;
   min-height: 450px;
   background-size: cover;
@@ -23,12 +23,12 @@
   margin-top: 100px; /* Tránh Header */
 }
 
-.about-hero-content {
+.about-page-container .about-hero-content {
   max-width: 800px;
-  animation: fadeInUp 1s ease-out;
+  animation: aboutFadeInUp 1s ease-out;
 }
 
-.about-hero-tag {
+.about-page-container .about-hero-tag {
   font-size: 0.85rem;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -38,7 +38,7 @@
   margin-bottom: 15px;
 }
 
-.about-hero-content h1 {
+.about-page-container .about-hero-content h1 {
   font-family: "Didot", "Playfair Display", "Georgia", serif;
   font-size: 3.8rem;
   font-weight: 400;
@@ -48,7 +48,7 @@
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
-.about-hero-content p {
+.about-page-container .about-hero-content p {
   font-size: 1.25rem;
   font-weight: 300;
   margin: 0;
@@ -57,8 +57,8 @@
   text-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
 }
 
-/* Common Section Styles */
-.section-tag {
+/* Scoped Section Styles cho trang About */
+.about-page-container .section-tag {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.15em;
@@ -68,7 +68,7 @@
   margin-bottom: 15px;
 }
 
-.section-title {
+.about-page-container .section-title {
   font-family: "Didot", "Playfair Display", "Georgia", serif;
   font-size: 2.5rem;
   font-weight: 400;
@@ -78,24 +78,24 @@
 }
 
 /* 2. Our Story Section */
-.about-story-section {
+.about-page-container .about-story-section {
   padding: 100px 20px;
 }
 
-.about-story-grid {
+.about-page-container .about-story-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 80px;
   align-items: center;
 }
 
-.story-text-col {
+.about-page-container .story-text-col {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
 
-.story-lead {
+.about-page-container .story-lead {
   font-size: 1.2rem;
   line-height: 1.6;
   color: #444444;
@@ -103,29 +103,29 @@
   font-weight: 500;
 }
 
-.story-paragraph {
+.about-page-container .story-paragraph {
   font-size: 0.98rem;
   line-height: 1.7;
   color: #666666;
   margin-bottom: 20px;
 }
 
-.story-paragraph strong {
+.about-page-container .story-paragraph strong {
   color: #000000;
 }
 
-.story-image-col {
+.about-page-container .story-image-col {
   display: flex;
   justify-content: center;
 }
 
-.story-image-wrapper {
+.about-page-container .story-image-wrapper {
   position: relative;
   width: 100%;
   max-width: 480px;
 }
 
-.story-image {
+.about-page-container .story-image {
   width: 100%;
   height: 480px;
   object-fit: cover;
@@ -136,7 +136,7 @@
   box-shadow: 0 10px 30px rgba(0,0,0,0.08);
 }
 
-.story-image-border {
+.about-page-container .story-image-border {
   position: absolute;
   top: 25px;
   left: -25px;
@@ -149,36 +149,36 @@
   transition: transform 0.5s ease;
 }
 
-.story-image-wrapper:hover .story-image-border {
+.about-page-container .story-image-wrapper:hover .story-image-border {
   transform: translate(10px, -10px);
 }
 
 /* 3. Core Values Section */
-.about-values-section {
+.about-page-container .about-values-section {
   background-color: #fcfbfa; /* Nền trắng ngà siêu nhẹ sang trọng */
   padding: 100px 20px;
 }
 
-.section-center-header {
+.about-page-container .section-center-header {
   text-align: center;
   max-width: 700px;
   margin: 0 auto 60px auto;
 }
 
-.section-subtitle {
+.about-page-container .section-subtitle {
   font-size: 1.05rem;
   color: #777777;
   margin: 0;
   font-weight: 300;
 }
 
-.values-grid {
+.about-page-container .values-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 30px;
 }
 
-.value-card {
+.about-page-container .value-card {
   background-color: #ffffff;
   padding: 45px 30px;
   border-radius: 8px;
@@ -188,13 +188,13 @@
   text-align: left;
 }
 
-.value-card:hover {
+.about-page-container .value-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 15px 35px rgba(171, 142, 102, 0.08);
   border-color: rgba(171, 142, 102, 0.25);
 }
 
-.value-icon {
+.about-page-container .value-icon {
   width: 55px;
   height: 55px;
   border-radius: 50%;
@@ -208,20 +208,20 @@
   transition: all 0.3s ease;
 }
 
-.value-card:hover .value-icon {
+.about-page-container .value-card:hover .value-icon {
   background-color: var(--color-primary, #ab8e66);
   color: #ffffff;
   transform: rotate(360deg);
 }
 
-.value-card h3 {
+.about-page-container .value-card h3 {
   font-size: 1.25rem;
   margin: 0 0 15px 0;
   color: #111111;
   font-weight: 600;
 }
 
-.value-card p {
+.about-page-container .value-card p {
   font-size: 0.9rem;
   line-height: 1.6;
   color: #777777;
@@ -229,25 +229,25 @@
 }
 
 /* 4. Stats Section */
-.about-stats-section {
+.about-page-container .about-stats-section {
   padding: 80px 20px;
   border-top: 1px solid #f0f0f0;
 }
 
-.stats-grid {
+.about-page-container .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 30px;
   text-align: center;
 }
 
-.stat-item {
+.about-page-container .stat-item {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.stat-number {
+.about-page-container .stat-number {
   font-family: "Didot", "Playfair Display", "Georgia", serif;
   font-size: 3.5rem;
   font-weight: 400;
@@ -255,7 +255,7 @@
   line-height: 1;
 }
 
-.stat-label {
+.about-page-container .stat-label {
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
@@ -264,7 +264,7 @@
 }
 
 /* Animations */
-@keyframes fadeInUp {
+@keyframes aboutFadeInUp {
   from {
     opacity: 0;
     transform: translateY(30px);
@@ -277,75 +277,75 @@
 
 /* Responsive */
 @media (max-width: 1024px) {
-  .about-story-grid {
+  .about-page-container .about-story-grid {
     gap: 40px;
   }
   
-  .values-grid {
+  .about-page-container .values-grid {
     grid-template-columns: repeat(2, 1fr);
   }
   
-  .about-hero-content h1 {
+  .about-page-container .about-hero-content h1 {
     font-size: 3.2rem;
   }
 }
 
 @media (max-width: 768px) {
-  .about-hero {
+  .about-page-container .about-hero {
     height: 50vh;
     min-height: 380px;
     margin-top: 80px;
   }
   
-  .about-hero-content h1 {
+  .about-page-container .about-hero-content h1 {
     font-size: 2.4rem;
   }
   
-  .about-hero-content p {
+  .about-page-container .about-hero-content p {
     font-size: 1.05rem;
   }
 
-  .about-story-section {
+  .about-page-container .about-story-section {
     padding: 60px 20px;
   }
 
-  .about-story-grid {
+  .about-page-container .about-story-grid {
     grid-template-columns: 1fr;
     gap: 50px;
   }
 
-  .story-image-col {
-    order: -1; /* Đưa ảnh lên trước text trên điện thoại */
+  .about-page-container .story-image-col {
+    order: -1;
   }
 
-  .story-image {
+  .about-page-container .story-image {
     height: 350px;
   }
 
-  .story-image-border {
+  .about-page-container .story-image-border {
     top: 15px;
     left: -15px;
   }
   
-  .about-values-section {
+  .about-page-container .about-values-section {
     padding: 60px 20px;
   }
   
-  .values-grid {
+  .about-page-container .values-grid {
     grid-template-columns: 1fr;
     gap: 20px;
   }
   
-  .about-stats-section {
+  .about-page-container .about-stats-section {
     padding: 50px 20px;
   }
 
-  .stats-grid {
+  .about-page-container .stats-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 40px 20px;
   }
   
-  .stat-number {
+  .about-page-container .stat-number {
     font-size: 2.8rem;
   }
 }
