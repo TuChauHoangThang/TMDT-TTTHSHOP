@@ -82,6 +82,16 @@ public class OrderService {
         return orderRepository.findByCustomerIdOrderByCreatedAtDesc(customerId);
     }
 
+    @Transactional(readOnly = true)
+    public Order getOrderById(Long id, String customerId) {
+        Order order = orderRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng #" + id));
+        if (!order.getCustomerId().equals(customerId)) {
+            throw new RuntimeException("Bạn không có quyền xem đơn hàng này");
+        }
+        return order;
+    }
+
     @Transactional
     public Order updateOrderStatus(Long orderId, String status) {
         Order order = orderRepository.findById(orderId)
