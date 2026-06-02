@@ -23,6 +23,7 @@ import CustomOrderDetail from './pages/CustomOrder/CustomOrderDetail';
 import SellerRFQList from './pages/Seller/SellerRFQList';
 import SellerRFQDetail from './pages/Seller/SellerRFQDetail';
 import ContactPage from './pages/Contact/ContactPage';
+import ScrollToTop from './components/ScrollToTop/ScrollToTop';
 
 import ContractorLayout from './pages/Contractor/ContractorLayout';
 import ContractorDashboard from './pages/Contractor/ContractorDashboard';
@@ -55,6 +56,7 @@ function App() {
       <FavoriteProvider>
         <CartProvider>
           <Router>
+            <ScrollToTop />
             <Routes>
               {/* ── Routes WITH Header & Footer ── */}
               <Route element={<MainLayout />}>
