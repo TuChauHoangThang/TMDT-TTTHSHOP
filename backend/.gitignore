@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Uploads (user uploaded files - do not commit) ###
+uploads/*.png
+uploads/*.jpg
+uploads/*.jpeg
+uploads/*.gif
+uploads/*.webp
+uploads/custom-orders/
