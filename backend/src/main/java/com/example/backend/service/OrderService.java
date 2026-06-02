@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 
+
 @Service
 public class OrderService {
 
@@ -22,6 +23,9 @@ public class OrderService {
 
     @Autowired
     private CartItemRepository cartItemRepository;
+    
+    @Autowired
+    private NotificationService notificationService;
 
     @Transactional
     public Order createOrder(String customerId, OrderRequestDTO requestDTO) {
@@ -63,6 +67,12 @@ public class OrderService {
         Order savedOrder = orderRepository.save(order);
 
         cartItemRepository.deleteByCustomerId(customerId);
+        
+        notificationService.createNotification(
+            customerId, 
+            "Đặt hàng thành công", 
+            "Đơn hàng của bạn đã được tiếp nhận và đang trong quá trình xử lý. Cảm ơn bạn đã mua sắm tại HTTTSHOP!"
+        );
 
         return savedOrder;
     }

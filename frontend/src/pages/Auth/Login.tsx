@@ -29,7 +29,21 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       await login(email.trim(), password);
-      navigate(from, { replace: true });
+      // Redirect theo role
+      // Lấy user từ localStorage vì state chưa update kịp
+      const storedUser = localStorage.getItem('auth_user');
+      if (storedUser) {
+        const u = JSON.parse(storedUser);
+        if (u.role === 'ADMIN') {
+          navigate('/admin/dashboard', { replace: true });
+          return;
+        }
+        if (u.role === 'CONTRACTOR') {
+          navigate('/contractor/dashboard', { replace: true });
+          return;
+        }
+      }
+      navigate(from === '/' ? '/customer/dashboard' : from, { replace: true });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Đăng nhập thất bại');
     } finally {

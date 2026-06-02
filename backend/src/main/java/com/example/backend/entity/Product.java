@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Sản phẩm nội thất
@@ -92,6 +93,7 @@ public class Product {
 
     // ── Helper: lấy URL ảnh đại diện ──
     @Transient
+    @JsonIgnore
     public String getPrimaryImageUrl() {
         if (images == null || images.isEmpty()) return null;
         return images.stream()

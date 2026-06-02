@@ -4,6 +4,7 @@ import { productService } from '../../services/productService';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useFavorite } from '../../context/FavoriteContext';
+import { toast } from 'react-toastify';
 import type { Product } from '../../types';
 import '../../css/ProductCard.css';
 import './ProductDetail.css';
@@ -43,7 +44,7 @@ const ProductDetail: React.FC = () => {
 
   const handleAddToCart = async () => {
     if (!isAuthenticated) {
-      alert('Vui lòng đăng nhập để thêm vào giỏ hàng!');
+      toast.warning('Vui lòng đăng nhập để thêm vào giỏ hàng!');
       navigate('/login');
       return;
     }
@@ -51,23 +52,26 @@ const ProductDetail: React.FC = () => {
 
     try {
       await addToCart(product.id, quantity);
-      alert(`Đã thêm ${quantity} ${product.name} vào giỏ hàng!`);
+      toast.success(`Đã thêm ${quantity} ${product.name} vào giỏ hàng!`);
     } catch (error) {
-      alert('Có lỗi xảy ra khi thêm vào giỏ hàng.');
+      console.error(error);
+      toast.error('Có lỗi xảy ra khi thêm vào giỏ hàng.');
     }
   };
 
   const handleToggleFavorite = async () => {
     if (!isAuthenticated) {
-      alert('Vui lòng đăng nhập để lưu sản phẩm yêu thích!');
+      toast.warning('Vui lòng đăng nhập để lưu sản phẩm yêu thích!');
       navigate('/login');
       return;
     }
     if (!product) return;
     try {
       await toggleFavorite(product.id);
+      toast.success(isFavorite ? 'Đã bỏ yêu thích' : 'Đã thêm vào yêu thích');
     } catch (error) {
-      alert('Có lỗi xảy ra.');
+      console.error(error);
+      toast.error('Có lỗi xảy ra.');
     }
   };
 

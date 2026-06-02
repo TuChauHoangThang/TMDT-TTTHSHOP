@@ -44,7 +44,9 @@ public class SecurityConfig {
                 }))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/uploads/**", "/api/payment/**").permitAll()
-                        .requestMatchers("/api/custom-orders/**").authenticated() // Yêu cầu đăng nhập
+                        .requestMatchers("/api/admin/**").authenticated()
+                        .requestMatchers("/api/notifications/**").authenticated()
+                        .requestMatchers("/api/custom-orders/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 // THÊM DÒNG NÀY ĐỂ FIX LỖI 403

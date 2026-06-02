@@ -1,0 +1,150 @@
+.notifications-container {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #f0ebe3;
+  overflow: hidden;
+}
+
+.notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 1.75rem;
+  border-bottom: 1px solid #f0ebe3;
+}
+
+.notifications-header h2 {
+  font-size: 1.2rem;
+  color: #1e1a14;
+  margin: 0;
+  font-family: 'Playfair Display', serif;
+  font-weight: 500;
+}
+
+.mark-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.45rem 1rem;
+  background-color: transparent;
+  color: #3d5c49;
+  border: 1.5px solid #3d5c49;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.mark-all-btn:hover {
+  background-color: #3d5c49;
+  color: #fff;
+}
+
+.no-notifications {
+  text-align: center;
+  color: #a89f92;
+  padding: 4rem 0;
+}
+
+.no-notifications i {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 1rem;
+  opacity: 0.4;
+}
+
+.no-notifications p {
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.notifications-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid #f8f4ef;
+  transition: background-color 0.2s ease;
+  position: relative;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-item.unread {
+  background-color: #f4f9f6;
+  cursor: pointer;
+}
+
+.notification-item.unread:hover {
+  background-color: #eaf3ee;
+}
+
+.notification-item.read {
+  background-color: #fff;
+}
+
+.notification-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #eaf1ed;
+  color: #3d5c49;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.notification-item.read .notification-icon {
+  background: #f4f1ec;
+  color: #a89f92;
+}
+
+.notification-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-content h4 {
+  margin: 0 0 0.35rem 0;
+  color: #1e1a14;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.notification-item.read .notification-content h4 {
+  color: #6a5f52;
+  font-weight: 500;
+}
+
+.notification-content p {
+  margin: 0 0 0.4rem 0;
+  color: #6a5f52;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.notification-time {
+  font-size: 0.75rem;
+  color: #a89f92;
+}
+
+.unread-dot {
+  width: 9px;
+  height: 9px;
+  background-color: #3d5c49;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 6px;
+}

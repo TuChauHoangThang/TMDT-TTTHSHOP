@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { FavoriteProvider } from './context/FavoriteContext';
@@ -29,6 +31,13 @@ import CustomerDashboard from './pages/Customer/CustomerDashboard';
 import CustomerOrders from './pages/Customer/CustomerOrders';
 import CustomerWishlist from './pages/Customer/CustomerWishlist';
 import CustomerProfile from './pages/Customer/CustomerProfile';
+import CustomerNotifications from './pages/Customer/CustomerNotifications';
+import AdminLayout from './pages/Admin/AdminLayout';
+import AdminDashboard from './pages/Admin/AdminDashboard';
+import AdminOrders from './pages/Admin/AdminOrders';
+import AdminCustomOrders from './pages/Admin/AdminCustomOrders';
+import AdminCustomers from './pages/Admin/AdminCustomers';
+import AdminContractors from './pages/Admin/AdminContractors';
 import './App.css';
 
 const MainLayout = () => (
@@ -85,8 +94,20 @@ function App() {
                 <Route path="profile" element={<CustomerProfile />} />
                 <Route path="custom-orders" element={<CustomOrderList />} />
                 <Route path="wishlist" element={<CustomerWishlist />} />
+                <Route path="notifications" element={<CustomerNotifications />} />
+              </Route>
+
+              {/* ── Admin Dashboard ── */}
+              <Route path="/admin" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminLayout /></ProtectedRoute>}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="dashboard" element={<AdminDashboard />} />
+                <Route path="orders" element={<AdminOrders />} />
+                <Route path="custom-orders" element={<AdminCustomOrders />} />
+                <Route path="customers" element={<AdminCustomers />} />
+                <Route path="contractors" element={<AdminContractors />} />
               </Route>
             </Routes>
+            <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover />
           </Router>
         </CartProvider>
       </FavoriteProvider>
