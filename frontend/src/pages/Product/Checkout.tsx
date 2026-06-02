@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
-import { cartService } from '../../services/cartService';
 import { orderService } from '../../services/orderService';
 import '../../css/Checkout.css';
 
@@ -50,12 +49,16 @@ const Checkout: React.FC = () => {
 
     setSubmitting(true);
     try {
-      await orderService.createOrder(formData);
+      const response = await orderService.createOrder(formData);
       
       await refreshCart();
 
-      alert('Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại TTTH.');
-      navigate('/');
+      if (formData.paymentMethod === 'VNPAY' && response.paymentUrl) {
+        window.location.href = response.paymentUrl;
+      } else {
+        alert('Đặt hàng thành công! Cảm ơn bạn đã mua sắm tại TTTH.');
+        navigate('/');
+      }
     } catch (error) {
       console.error(error);
       alert('Có lỗi xảy ra khi đặt hàng.');

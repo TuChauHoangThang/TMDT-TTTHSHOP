@@ -15,6 +15,8 @@ export interface User {
   avatarUrl?: string;
   role: UserRole;
   shopId?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 interface AuthContextValue {

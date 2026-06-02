@@ -13,6 +13,7 @@ import ProductList from './pages/Product/ProductList';
 import ProductDetail from './pages/Product/ProductDetail';
 import Cart from './pages/Product/Cart';
 import Checkout from './pages/Product/Checkout';
+import VNPayCallback from './pages/Product/VNPayCallback';
 import Wishlist from './pages/Product/Wishlist';
 import CustomOrderList from './pages/CustomOrder/CustomOrderList';
 import CreateCustomOrder from './pages/CustomOrder/CreateCustomOrder';
@@ -55,6 +56,7 @@ function App() {
                 <Route path="/product/:slug" element={<ProductDetail />} />
                 <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
                 <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+                <Route path="/checkout/vnpay-callback" element={<VNPayCallback />} />
                 <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
 
                 <Route path="/custom-orders" element={<ProtectedRoute><CustomOrderList /></ProtectedRoute>} />

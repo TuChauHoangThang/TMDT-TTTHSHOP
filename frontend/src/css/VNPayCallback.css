@@ -1,0 +1,191 @@
+.vnpay-callback-page {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1rem;
+  background: radial-gradient(circle at top right, rgba(235, 244, 255, 0.4), transparent), 
+              radial-gradient(circle at bottom left, rgba(254, 243, 199, 0.3), transparent);
+}
+
+.vnpay-callback-card {
+  max-width: 550px;
+  width: 100%;
+  background: var(--color-bg, #ffffff);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  padding: 3rem 2.5rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.status-icon-wrap {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.status-icon-wrap.success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  animation: pulseSuccess 2s infinite;
+}
+
+.status-icon-wrap.error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  animation: pulseError 2s infinite;
+}
+
+.status-icon-wrap.loading {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.status-icon-wrap i {
+  font-size: 3.5rem;
+}
+
+@keyframes pulseSuccess {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes pulseError {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.status-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(59, 130, 246, 0.1);
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vnpay-callback-card h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #1f2937;
+}
+
+.vnpay-callback-card p.status-desc {
+  font-size: 1.05rem;
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.vnpay-detail-table {
+  background-color: #f9fafb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2.5rem;
+  border: 1px solid #f3f4f6;
+}
+
+.vnpay-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px dashed #e5e7eb;
+}
+
+.vnpay-detail-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.vnpay-detail-row:first-child {
+  padding-top: 0;
+}
+
+.vnpay-detail-label {
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.vnpay-detail-value {
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.vnpay-detail-value.order-id {
+  color: #3b82f6;
+}
+
+.vnpay-detail-value.amount {
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.callback-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.callback-actions .btn {
+  padding: 0.8rem 2rem;
+  font-weight: 600;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.callback-actions .btn--outline {
+  border: 1px solid #d1d5db;
+  color: #4b5563;
+  background: white;
+}
+
+.callback-actions .btn--outline:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+  color: #111827;
+}

@@ -43,7 +43,7 @@ public class SecurityConfig {
                     return config;
                 }))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/uploads/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/uploads/**", "/api/payment/**").permitAll()
                         .requestMatchers("/api/custom-orders/**").authenticated() // Yêu cầu đăng nhập
                         .anyRequest().authenticated()
                 )
