@@ -30,4 +30,10 @@ public interface CustomOrderRequestRepository extends JpaRepository<CustomOrderR
             @Param("keyword") String keyword,
             @Param("furnitureType") String furnitureType,
             Pageable pageable);
+
+    /** Admin: Lấy tất cả yêu cầu */
+    List<CustomOrderRequest> findAllByOrderByCreatedAtDesc();
+
+    /** Admin: Đếm theo status */
+    long countByStatus(CustomOrderRequest.Status status);
 }

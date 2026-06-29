@@ -208,8 +208,7 @@ const Header: React.FC = () => {
                           {[
                             { icon: 'fa-user', label: 'Tài Khoản Của Tôi', to: '/customer/dashboard', roles: ['CUSTOMER'] },
                             { icon: 'fa-store', label: 'Kênh Nhà Thầu', to: '/contractor/dashboard', roles: ['CONTRACTOR'] },
-                            { icon: 'fa-wallet', label: 'Ví của tôi', to: '/wallet', roles: ['CUSTOMER', 'CONTRACTOR'] },
-                            { icon: 'fa-gavel', label: 'Phân xử Escrow', to: '/admin/escrow', roles: ['ADMIN'] },
+
                             { icon: 'fa-heart', label: 'Danh sách yêu thích', to: '/wishlist', roles: ['CUSTOMER', 'CONTRACTOR', 'ADMIN'] }
                           ]
                           .filter(item => item.roles.includes(user.role as string))

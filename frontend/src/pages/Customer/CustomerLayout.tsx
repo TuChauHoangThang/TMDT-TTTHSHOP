@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { notificationService } from '../../services/notificationService';
 import './CustomerLayout.css';
 
 const CustomerLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      notificationService.getUnreadCount().then(count => setUnreadCount(count)).catch(() => {});
+    }
+  }, [user]);
 
   if (!user) {
     navigate('/login');
@@ -125,6 +133,22 @@ const CustomerLayout: React.FC = () => {
           >
             <i className="fa-regular fa-heart" />
             <span className="nav-text">Sản Phẩm Yêu Thích</span>
+          </NavLink>
+
+          <NavLink
+            to="/customer/notifications"
+            className={({ isActive }) =>
+              `customer-nav-item${isActive ? ' active' : ''}`
+            }
+            onClick={() => setUnreadCount(0)}
+          >
+            <div style={{ position: 'relative', display: 'inline-flex' }}>
+              <i className="fa-regular fa-bell" />
+              {unreadCount > 0 && (
+                <span className="notif-badge">{unreadCount}</span>
+              )}
+            </div>
+            <span className="nav-text">Thông Báo</span>
           </NavLink>
         </nav>
 

@@ -235,6 +235,27 @@
 }
 .customer-nav-item.active i { color: var(--cp-green); }
 
+/* Notification badge on bell icon */
+.notif-badge {
+  position: absolute;
+  top: -5px;
+  right: -7px;
+  background: #e53935;
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 99px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  line-height: 1;
+  border: 2px solid var(--cp-cream);
+}
+
+
 /* Footer / logout */
 .customer-sidebar-footer {
   padding: 14px 18px;

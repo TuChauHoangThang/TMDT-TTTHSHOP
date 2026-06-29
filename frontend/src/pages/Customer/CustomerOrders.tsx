@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import axios from 'axios';
+import { orderService } from '../../services/orderService';
 
 interface OrderItem {
   id: number;
@@ -28,7 +28,10 @@ const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   PROCESSING: { label: 'Đang Xử Lý',      cls: 'processing' },
   SHIPPING:   { label: 'Đang Vận Chuyển', cls: 'shipping'   },
   DELIVERED:  { label: 'Đã Giao',         cls: 'delivered'  },
+  COMPLETED:  { label: 'Hoàn Thành',      cls: 'delivered'  },
   CANCELLED:  { label: 'Đã Hủy',          cls: 'cancelled'  },
+  PAID:       { label: 'Đã Thanh Toán',   cls: 'delivered'  },
+  FAILED:     { label: 'Thanh Toán Lỗi',  cls: 'cancelled'  },
 };
 
 type FilterKey = 'ALL' | 'PENDING' | 'PROCESSING' | 'SHIPPING' | 'DELIVERED' | 'CANCELLED';
@@ -43,11 +46,8 @@ const CustomerOrders: React.FC = () => {
   useEffect(() => {
     if (!user?.id) return;
     setIsLoading(true);
-    axios
-      .get('http://localhost:8080/api/orders', {
-        headers: { 'X-Customer-Id': String(user.id) },
-      })
-      .then(res => setOrders(Array.isArray(res.data) ? res.data : []))
+    orderService.getOrders()
+      .then(data => setOrders(Array.isArray(data) ? data : []))
       .catch(() => setOrders([]))
       .finally(() => setIsLoading(false));
   }, [user]);

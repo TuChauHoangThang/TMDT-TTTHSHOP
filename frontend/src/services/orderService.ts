@@ -15,5 +15,15 @@ export const orderService = {
   createOrder: async (orderData: any) => {
     const response = await axios.post(API_URL, orderData, { headers: getHeaders() });
     return response.data;
+  },
+
+  getOrders: async () => {
+    const response = await axios.get(API_URL, { headers: getHeaders() });
+    return response.data;
+  },
+
+  getOrderById: async (id: number) => {
+    const response = await axios.get(`${API_URL}/${id}`, { headers: getHeaders() });
+    return response.data;
   }
 };
