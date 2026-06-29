@@ -7,7 +7,10 @@ import type { CustomOrderRequest, SubmitQuoteDto } from '../../types/customOrder
 
 
 
-const fmtVND = (n: number) => n.toLocaleString('vi-VN') + 'đ';
+const fmtVND = (n: number | null | undefined) => {
+  if (n == null) return '0đ';
+  return n.toLocaleString('vi-VN') + 'đ';
+};
 const fmtDate = (s: string) => new Date(s).toLocaleDateString('vi-VN');
 
 const SellerRFQDetail: React.FC = () => {
@@ -18,6 +21,7 @@ const SellerRFQDetail: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
+  const [shipping, setShipping] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   const [quote, setQuote] = useState<SubmitQuoteDto>({
@@ -25,6 +29,21 @@ const SellerRFQDetail: React.FC = () => {
   });
   const [images, setImages] = useState<File[]>([]); // Thêm state cho ảnh báo giá
   const [completionDate, setCompletionDate] = useState('');
+
+  const handleShipProject = async () => {
+    if (!window.confirm('Xác nhận bạn đã sản xuất hoàn thành và bàn giao sản phẩm?')) return;
+    setShipping(true);
+    try {
+      await customOrderService.shipProject(Number(id));
+      showToast('Đã bàn giao sản phẩm! Đang chờ khách hàng nghiệm thu và giải ngân.');
+      const data = await customOrderService.getOpenRequestDetail(Number(id));
+      setOrder(data as any);
+    } catch (err: any) {
+      showToast(err?.response?.data?.error || 'Lỗi khi báo cáo giao hàng', 'error');
+    } finally {
+      setShipping(false);
+    }
+  };
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -236,8 +255,8 @@ const SellerRFQDetail: React.FC = () => {
                       <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>Thời gian</span>
                       <span style={{ fontWeight: 600 }}>{myExistingQuote.estimatedDays} ngày</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>Trạng thái</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>Trạng thái báo giá</span>
                       <span style={{
                         fontWeight: 600,
                         color: myExistingQuote.status === 'ACCEPTED' ? '#2e7d32'
@@ -249,12 +268,45 @@ const SellerRFQDetail: React.FC = () => {
                         {myExistingQuote.status === 'REJECTED' && '❌ Không được chọn'}
                       </span>
                     </div>
+
+                    {myExistingQuote.status === 'ACCEPTED' && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>Tiến trình Escrow</span>
+                        <span style={{
+                          fontWeight: 600,
+                          color: order.status === 'WAITING_FOR_PAYMENT' ? '#d97706'
+                               : order.status === 'IN_PROGRESS' ? '#3b82f6'
+                               : order.status === 'COMPLETED_BY_CONTRACTOR' ? '#10b981'
+                               : order.status === 'COMPLETED' ? '#15803d'
+                               : order.status === 'DISPUTED' ? '#ef4444'
+                               : '#888'
+                        }}>
+                          {order.status === 'WAITING_FOR_PAYMENT' && '⏳ Chờ khách đặt cọc'}
+                          {order.status === 'IN_PROGRESS' && '🔒 Đang tạm giữ (Hãy sản xuất)'}
+                          {order.status === 'COMPLETED_BY_CONTRACTOR' && '🚚 Đã giao / Chờ khách giải ngân'}
+                          {order.status === 'COMPLETED' && '🔓 Đã giải ngân'}
+                          {order.status === 'DISPUTED' && '⚠️ Tranh chấp (Đang phân xử)'}
+                        </span>
+                      </div>
+                    )}
+
+                    {myExistingQuote.status === 'ACCEPTED' && order.customerName && (
+                      <div style={{ background: '#f8fafc', padding: '10px', borderRadius: '8px', marginTop: '10px', fontSize: '0.85rem', border: '1px solid #f1f5f9' }}>
+                        <div style={{ marginBottom: 4 }}><strong>Khách hàng: </strong>{order.customerName}</div>
+                        {order.status !== 'WAITING_FOR_PAYMENT' && order.customerPhone && (
+                          <div><strong>Số điện thoại: </strong><a href={`tel:${order.customerPhone}`}>{order.customerPhone}</a></div>
+                        )}
+                      </div>
+                    )}
+
                     {myExistingQuote.note && (
                       <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--color-border-light)', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
-                        💬 {myExistingQuote.note}
+                        💬 Ghi chú của bạn: "{myExistingQuote.note}"
                       </div>
                     )}
                   </div>
+
+                  {/* Actions based on Escrow & Order progress */}
                   {myExistingQuote.status === 'PENDING' && (
                     <button
                       className="btn btn--outline"
@@ -267,6 +319,46 @@ const SellerRFQDetail: React.FC = () => {
                         : <><i className="fa fa-xmark"></i> Rút Báo Giá</>
                       }
                     </button>
+                  )}
+
+                  {myExistingQuote.status === 'ACCEPTED' && order.status === 'WAITING_FOR_PAYMENT' && (
+                    <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '10px', borderRadius: '8px', fontSize: '0.82rem', color: '#b45309', marginTop: '10px', textAlign: 'center', lineHeight: 1.4 }}>
+                      <i className="fa-solid fa-circle-info" style={{ marginRight: 6 }}></i>
+                      Hãy bắt đầu sản xuất sản phẩm sau khi khách hàng hoàn tất đặt cọc tiền tạm giữ.
+                    </div>
+                  )}
+
+                  {myExistingQuote.status === 'ACCEPTED' && order.status === 'IN_PROGRESS' && (
+                    <button
+                      className="btn btn--primary"
+                      style={{ width: '100%', padding: '10px 0', fontSize: '0.85rem', borderRadius: '8px', marginTop: '10px', border: 'none', cursor: 'pointer' }}
+                      onClick={handleShipProject}
+                      disabled={shipping}
+                    >
+                      <i className="fa-solid fa-truck" style={{ marginRight: 6 }}></i>
+                      {shipping ? 'Đang cập nhật...' : 'Đã chế tác xong & Bàn giao hàng'}
+                    </button>
+                  )}
+
+                  {myExistingQuote.status === 'ACCEPTED' && order.status === 'COMPLETED_BY_CONTRACTOR' && (
+                    <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '10px', borderRadius: '8px', fontSize: '0.82rem', color: '#047857', marginTop: '10px', textAlign: 'center', lineHeight: 1.4 }}>
+                      <i className="fa-solid fa-circle-check" style={{ marginRight: 6 }}></i>
+                      Bạn đã thông báo bàn giao. Đang chờ khách hàng kiểm tra chất lượng và giải ngân tiền.
+                    </div>
+                  )}
+
+                  {myExistingQuote.status === 'ACCEPTED' && order.status === 'COMPLETED' && (
+                    <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '10px', borderRadius: '8px', fontSize: '0.82rem', color: '#15803d', marginTop: '10px', textAlign: 'center', fontWeight: 600 }}>
+                      <i className="fa-solid fa-circle-check" style={{ marginRight: 6 }}></i>
+                      Tiền tạm giữ đã được giải ngân thành công vào ví của bạn!
+                    </div>
+                  )}
+
+                  {myExistingQuote.status === 'ACCEPTED' && order.status === 'DISPUTED' && (
+                    <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', padding: '10px', borderRadius: '8px', fontSize: '0.82rem', color: '#b91c1c', marginTop: '10px', textAlign: 'center', lineHeight: 1.4 }}>
+                      <i className="fa-solid fa-circle-exclamation" style={{ marginRight: 6 }}></i>
+                      Dự án đang trong trạng thái khiếu nại/tranh chấp. Ban quản trị hệ thống đang tiến hành xác minh và xử lý.
+                    </div>
                   )}
                   <Link to="/contractor/rfq" className="btn btn--outline" style={{ width: '100%', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
                     <i className="fa fa-arrow-left"></i> Xem yêu cầu khác

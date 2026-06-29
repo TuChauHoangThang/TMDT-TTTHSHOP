@@ -156,6 +156,8 @@ public class CustomOrderDto {
     public static class RequestResponse {
         private Long id;
         private Long customerId;
+        private String customerName;
+        private String customerPhone;
         private String title;
         private String description;
         private String furnitureType;
@@ -198,9 +200,13 @@ public class CustomOrderDto {
             return resp;
         }
 
-        // Getters
+        // Getters & Setters
         public Long getId() { return id; }
         public Long getCustomerId() { return customerId; }
+        public String getCustomerName() { return customerName; }
+        public void setCustomerName(String name) { this.customerName = name; }
+        public String getCustomerPhone() { return customerPhone; }
+        public void setCustomerPhone(String phone) { this.customerPhone = phone; }
         public String getTitle() { return title; }
         public String getDescription() { return description; }
         public String getFurnitureType() { return furnitureType; }

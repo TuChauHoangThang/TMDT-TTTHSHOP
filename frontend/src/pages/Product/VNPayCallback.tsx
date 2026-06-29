@@ -79,10 +79,13 @@ const VNPayCallback: React.FC = () => {
               </>
             )}
 
+            {/* Details Table */}
             <div className="vnpay-detail-table">
               <div className="vnpay-detail-row">
-                <span className="vnpay-detail-label">Mã đơn hàng</span>
-                <span className="vnpay-detail-value order-id">#{orderId}</span>
+                <span className="vnpay-detail-label">{orderId.startsWith('ESCROW_') ? 'Mã yêu cầu' : 'Mã đơn hàng'}</span>
+                <span className="vnpay-detail-value order-id">
+                  {orderId.startsWith('ESCROW_') ? `#REQ-${orderId.substring(7)}` : `#${orderId}`}
+                </span>
               </div>
               <div className="vnpay-detail-row">
                 <span className="vnpay-detail-label">Số tiền</span>
@@ -103,9 +106,15 @@ const VNPayCallback: React.FC = () => {
             </div>
 
             <div className="callback-actions">
-              <Link to="/customer/orders" className="btn btn--primary">
-                <i className="fa fa-receipt"></i> Đơn hàng của tôi
-              </Link>
+              {orderId.startsWith('ESCROW_') ? (
+                <Link to={`/custom-orders/${orderId.substring(7)}`} className="btn btn--primary">
+                  <i className="fa fa-circle-info"></i> Chi tiết yêu cầu thiết kế
+                </Link>
+              ) : (
+                <Link to="/customer/orders" className="btn btn--primary">
+                  <i className="fa fa-receipt"></i> Đơn hàng của tôi
+                </Link>
+              )}
               <Link to="/" className="btn btn--outline">
                 <i className="fa fa-home"></i> Về trang chủ
               </Link>

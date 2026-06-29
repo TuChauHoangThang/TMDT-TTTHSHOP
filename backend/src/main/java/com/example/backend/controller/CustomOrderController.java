@@ -107,8 +107,8 @@ public class CustomOrderController {
     @GetMapping("/open/{id}")
     public ResponseEntity<?> getOpenRequestDetail(@PathVariable Long id) {
         try {
-            CustomOrderRequest request = service.getOpenRequestById(id);
-            return ResponseEntity.ok(CustomOrderDto.RequestResponse.from(request, true));
+            CustomOrderDto.RequestResponse response = service.getOpenRequestDetailResponse(id);
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.status(404).body(Map.of("error", e.getMessage()));
         }

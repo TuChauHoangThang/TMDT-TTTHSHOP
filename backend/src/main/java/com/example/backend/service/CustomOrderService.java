@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -64,6 +65,17 @@ public class CustomOrderService {
             quoteDto.setShopAddress(shop.getAddress());
             quoteDto.setShopLogo(shop.getLogoUrl());
             quoteDto.setShopRating(shop.getRating().doubleValue());
+        });
+    }
+
+    /**
+     * Hàm bổ trợ để lấy Tên và SĐT từ bảng User đổ vào RequestResponse DTO
+     */
+    private void enrichCustomerInfo(CustomOrderDto.RequestResponse resp) {
+        userRepo.findById(resp.getCustomerId()).ifPresent(user -> {
+            resp.setCustomerName(user.getFullName());
+            // Chỉ hiển thị SĐT khách hàng cho nhà thầu nếu nhà thầu được chọn hoặc khách hàng đang tự xem đơn
+            resp.setCustomerPhone(user.getPhone());
         });
     }
 
@@ -128,6 +140,9 @@ public class CustomOrderService {
 
         CustomOrderDto.RequestResponse resp = CustomOrderDto.RequestResponse.from(request, true);
 
+        // Làm giàu thông tin khách hàng
+        enrichCustomerInfo(resp);
+
         // Đổ thông tin Tên + SĐT vào từng quote
         if (resp.getQuotes() != null) {
             resp.getQuotes().forEach(this::enrichQuoteInfo);
@@ -146,6 +161,9 @@ public class CustomOrderService {
         }
         return request;
     }
+
+    @Autowired
+    private EscrowService escrowService;
 
     public CustomOrderDto.RequestResponse selectQuote(Long requestId, Long quoteId, Long customerId) {
         CustomOrderRequest request = getRequestById(requestId, customerId);
@@ -171,8 +189,11 @@ public class CustomOrderService {
         });
 
         request.setSelectedQuoteId(quoteId);
-        request.setStatus(CustomOrderRequest.Status.IN_PROGRESS);
+        request.setStatus(CustomOrderRequest.Status.WAITING_FOR_PAYMENT);
         requestRepo.save(request);
+
+        // Tạo bản ghi Escrow PENDING
+        escrowService.createEscrow(request, selectedQuote);
 
         // Trả về DTO đã có đầy đủ info nhà thầu
         CustomOrderDto.RequestResponse resp = CustomOrderDto.RequestResponse.from(request, true);
@@ -208,6 +229,22 @@ public class CustomOrderService {
             throw new RuntimeException("Yêu cầu này đã bị hủy");
         }
         return request;
+    }
+
+    @Transactional(readOnly = true)
+    public CustomOrderDto.RequestResponse getOpenRequestDetailResponse(Long id) {
+        CustomOrderRequest request = getOpenRequestById(id);
+        CustomOrderDto.RequestResponse resp = CustomOrderDto.RequestResponse.from(request, true);
+
+        // Làm giàu thông tin khách hàng
+        enrichCustomerInfo(resp);
+
+        // Làm giàu thông tin các báo giá
+        if (resp.getQuotes() != null) {
+            resp.getQuotes().forEach(this::enrichQuoteInfo);
+        }
+
+        return resp;
     }
 
     @Transactional(readOnly = true)

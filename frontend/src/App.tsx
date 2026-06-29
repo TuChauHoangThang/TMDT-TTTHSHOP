@@ -20,6 +20,8 @@ import CreateCustomOrder from './pages/CustomOrder/CreateCustomOrder';
 import CustomOrderDetail from './pages/CustomOrder/CustomOrderDetail';
 import SellerRFQList from './pages/Seller/SellerRFQList';
 import SellerRFQDetail from './pages/Seller/SellerRFQDetail';
+import Wallet from './pages/Customer/Wallet';
+import AdminEscrowDashboard from './pages/Admin/AdminEscrowDashboard';
 
 import ContractorLayout from './pages/Contractor/ContractorLayout';
 import ContractorDashboard from './pages/Contractor/ContractorDashboard';
@@ -62,6 +64,8 @@ function App() {
                 <Route path="/custom-orders" element={<ProtectedRoute><CustomOrderList /></ProtectedRoute>} />
                 <Route path="/custom-orders/create" element={<ProtectedRoute><CreateCustomOrder /></ProtectedRoute>} />
                 <Route path="/custom-orders/:id" element={<ProtectedRoute><CustomOrderDetail /></ProtectedRoute>} />
+                <Route path="/wallet" element={<ProtectedRoute><Wallet /></ProtectedRoute>} />
+                <Route path="/admin/escrow" element={<ProtectedRoute allowedRoles={['ADMIN']}><AdminEscrowDashboard /></ProtectedRoute>} />
 
                 <Route path="*" element={
                   <div className="container section" style={{ minHeight: '50vh', paddingTop: '6rem' }}>
