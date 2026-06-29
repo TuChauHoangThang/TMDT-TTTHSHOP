@@ -3,11 +3,32 @@
 // ============================================================
 
 export type CustomOrderStatus =
-    | 'OPEN'         // Đang chờ báo giá từ nhà thầu
-    | 'QUOTED'       // Đã nhận ít nhất 1 báo giá
-    | 'IN_PROGRESS'  // Khách đã chọn nhà thầu, đang thực hiện
-    | 'COMPLETED'    // Hoàn thành
-    | 'CANCELLED';   // Đã hủy
+    | 'OPEN'                    // Đang chờ báo giá từ nhà thầu
+    | 'QUOTED'                  // Đã nhận ít nhất 1 báo giá
+    | 'WAITING_FOR_PAYMENT'     // Chờ thanh toán tạm giữ
+    | 'IN_PROGRESS'             // Tiền đã tạm giữ, đang thực hiện
+    | 'COMPLETED_BY_CONTRACTOR' // Nhà thầu đã bàn giao, chờ khách xác nhận
+    | 'COMPLETED'               // Đã giải ngân, hoàn thành
+    | 'DISPUTED'                // Đang tranh chấp khiếu nại
+    | 'CANCELLED';              // Đã hủy
+
+export type EscrowStatus = 'PENDING' | 'HELD' | 'RELEASED' | 'REFUNDED' | 'DISPUTED';
+
+export interface EscrowInfo {
+  id: number;
+  requestId: number;
+  customerId: number;
+  contractorId: number;
+  amount: number;
+  status: EscrowStatus;
+  paymentMethod?: 'VNPAY' | 'MOCK';
+  disputeReason?: string;
+  disputeResolution?: string;
+  createdAt: string;
+  updatedAt: string;
+  releasedAt?: string;
+  refundedAt?: string;
+}
 
 export type QuoteStatus =
     | 'PENDING'    // Chờ khách hàng xem xét

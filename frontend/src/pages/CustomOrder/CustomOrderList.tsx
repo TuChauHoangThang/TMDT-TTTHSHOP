@@ -7,22 +7,31 @@ import type { CustomOrderRequest, CustomOrderStatus } from '../../types/customOr
 
 
 const STATUS_LABELS: Record<CustomOrderStatus, string> = {
-  OPEN: 'Đang chờ báo giá',
+  OPEN: 'Chờ báo giá',
   QUOTED: 'Đã nhận báo giá',
+  WAITING_FOR_PAYMENT: 'Chờ đặt cọc',
   IN_PROGRESS: 'Đang thực hiện',
+  COMPLETED_BY_CONTRACTOR: 'Đã bàn giao',
   COMPLETED: 'Hoàn thành',
+  DISPUTED: 'Khiếu nại',
   CANCELLED: 'Đã hủy',
 };
 
 const STATUS_ICONS: Record<CustomOrderStatus, string> = {
   OPEN: 'fa-clock',
   QUOTED: 'fa-envelope-open-text',
+  WAITING_FOR_PAYMENT: 'fa-shield-halved',
   IN_PROGRESS: 'fa-hammer',
+  COMPLETED_BY_CONTRACTOR: 'fa-truck',
   COMPLETED: 'fa-circle-check',
+  DISPUTED: 'fa-triangle-exclamation',
   CANCELLED: 'fa-circle-xmark',
 };
 
-const fmtVND = (n: number) => n.toLocaleString('vi-VN') + 'đ';
+const fmtVND = (n: number | null | undefined) => {
+  if (n == null) return '0đ';
+  return n.toLocaleString('vi-VN') + 'đ';
+};
 const fmtDate = (s: string) => new Date(s).toLocaleDateString('vi-VN');
 
 const CustomOrderList: React.FC = () => {

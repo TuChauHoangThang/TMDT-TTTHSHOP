@@ -15,11 +15,14 @@ import java.util.List;
 public class CustomOrderRequest {
 
     public enum Status {
-        OPEN,        // Đang chờ báo giá
-        QUOTED,      // Đã nhận ít nhất 1 báo giá
-        IN_PROGRESS, // Khách đã chọn nhà thầu
-        COMPLETED,   // Hoàn thành
-        CANCELLED    // Đã hủy
+        OPEN,                    // Đang chờ báo giá
+        QUOTED,                  // Đã nhận ít nhất 1 báo giá
+        WAITING_FOR_PAYMENT,     // Khách hàng đã chọn báo giá, chờ thanh toán tạm giữ
+        IN_PROGRESS,             // Tiền đã tạm giữ, đang thực hiện
+        COMPLETED_BY_CONTRACTOR, // Nhà thầu đã hoàn thành và giao hàng, chờ khách xác nhận
+        COMPLETED,               // Đã giải ngân, hoàn thành
+        DISPUTED,                // Đang có tranh chấp khiếu nại
+        CANCELLED                // Đã hủy
     }
 
     @Id

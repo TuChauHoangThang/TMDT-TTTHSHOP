@@ -22,10 +22,6 @@ import CreateCustomOrder from './pages/CustomOrder/CreateCustomOrder';
 import CustomOrderDetail from './pages/CustomOrder/CustomOrderDetail';
 import SellerRFQList from './pages/Seller/SellerRFQList';
 import SellerRFQDetail from './pages/Seller/SellerRFQDetail';
-import ContactPage from './pages/Contact/ContactPage';
-import AboutPage from './pages/About/AboutPage';
-import ScrollToTop from './components/ScrollToTop/ScrollToTop';
-
 import ContractorLayout from './pages/Contractor/ContractorLayout';
 import ContractorDashboard from './pages/Contractor/ContractorDashboard';
 import ContractorProfile from './pages/Contractor/ContractorProfile';
@@ -76,8 +72,6 @@ function App() {
                 <Route path="/custom-orders" element={<ProtectedRoute><CustomOrderList /></ProtectedRoute>} />
                 <Route path="/custom-orders/create" element={<ProtectedRoute><CreateCustomOrder /></ProtectedRoute>} />
                 <Route path="/custom-orders/:id" element={<ProtectedRoute><CustomOrderDetail /></ProtectedRoute>} />
-                <Route path="/contact" element={<ContactPage />} />
-
                 <Route path="*" element={
                   <div className="container section" style={{ minHeight: '50vh', paddingTop: '6rem' }}>
                     <h3>🚧 Đang phát triển...</h3>

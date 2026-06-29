@@ -91,5 +91,99 @@ export const customOrderService = {
   withdrawQuote: async (requestId: number, quoteId: number) => {
     const response = await axios.delete(`${API_URL}/${requestId}/quotes/${quoteId}`, { headers: getContractorHeaders() });
     return response.data;
+  },
+
+  // ================= ESCROW & WALLET API =================
+
+  getEscrow: async (requestId: number): Promise<any> => {
+    const response = await axios.get(`http://localhost:8080/api/escrows/${requestId}`);
+    return response.data;
+  },
+
+  depositMock: async (requestId: number): Promise<any> => {
+    const response = await axios.post(`http://localhost:8080/api/escrows/${requestId}/deposit-mock`, {}, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  depositWithWallet: async (requestId: number): Promise<any> => {
+    const response = await axios.post(`http://localhost:8080/api/escrows/${requestId}/deposit-wallet`, {}, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  getVNPayUrl: async (requestId: number): Promise<any> => {
+    const response = await axios.post(`http://localhost:8080/api/escrows/${requestId}/vnpay-url`, {}, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  shipProject: async (requestId: number): Promise<any> => {
+    const response = await axios.post(`http://localhost:8080/api/escrows/${requestId}/ship`, {}, { headers: getContractorHeaders() });
+    return response.data;
+  },
+
+  releaseEscrow: async (requestId: number): Promise<any> => {
+    const response = await axios.post(`http://localhost:8080/api/escrows/${requestId}/release`, {}, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  disputeEscrow: async (requestId: number, reason: string): Promise<any> => {
+    const response = await axios.post(`http://localhost:8080/api/escrows/${requestId}/dispute`, { reason }, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  getWallet: async (): Promise<any> => {
+    const response = await axios.get(`http://localhost:8080/api/users/wallet`, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  depositWalletMock: async (amount: number): Promise<any> => {
+    const response = await axios.post(`http://localhost:8080/api/users/wallet/deposit-mock`, { amount }, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  depositWalletVNPay: async (amount: number): Promise<any> => {
+    const response = await axios.post(`http://localhost:8080/api/users/wallet/deposit-vnpay`, { amount }, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  getWalletTransactions: async (): Promise<any> => {
+    const response = await axios.get(`http://localhost:8080/api/users/wallet/transactions`, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  createWithdrawalRequest: async (amount: number, bankName: string, accountNumber: string, accountHolderName: string): Promise<any> => {
+    const response = await axios.post(`http://localhost:8080/api/users/wallet/withdraw-request`, { amount, bankName, accountNumber, accountHolderName }, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  getWithdrawalRequests: async (): Promise<any> => {
+    const response = await axios.get(`http://localhost:8080/api/users/wallet/withdraw-requests`, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  // ================= ADMIN ESCROW & WALLET API =================
+
+  getAllEscrows: async (): Promise<any> => {
+    const response = await axios.get(`http://localhost:8080/api/escrows/admin/all`, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  resolveDispute: async (escrowId: number, resolution: 'RELEASE' | 'REFUND', notes: string): Promise<any> => {
+    const response = await axios.post(`http://localhost:8080/api/escrows/admin/${escrowId}/resolve`, { resolution, notes }, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  getAllWithdrawRequestsAdmin: async (): Promise<any> => {
+    const response = await axios.get(`http://localhost:8080/api/users/wallet/admin/withdraw-requests`, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  approveWithdrawalAdmin: async (id: number): Promise<any> => {
+    const response = await axios.post(`http://localhost:8080/api/users/wallet/admin/withdraw-requests/${id}/approve`, {}, { headers: getCustomerHeaders() });
+    return response.data;
+  },
+
+  rejectWithdrawalAdmin: async (id: number): Promise<any> => {
+    const response = await axios.post(`http://localhost:8080/api/users/wallet/admin/withdraw-requests/${id}/reject`, {}, { headers: getCustomerHeaders() });
+    return response.data;
   }
 };
