@@ -29,6 +29,7 @@ import CustomerLayout from './pages/Customer/CustomerLayout';
 import CustomerDashboard from './pages/Customer/CustomerDashboard';
 import CustomerOrders from './pages/Customer/CustomerOrders';
 import CustomerWishlist from './pages/Customer/CustomerWishlist';
+import Wallet from './pages/Customer/Wallet';
 import CustomerProfile from './pages/Customer/CustomerProfile';
 import CustomerNotifications from './pages/Customer/CustomerNotifications';
 import AdminLayout from './pages/Admin/AdminLayout';
@@ -88,6 +89,7 @@ function App() {
                 <Route path="profile" element={<ContractorProfile />} />
                 <Route path="rfq" element={<SellerRFQList />} />
                 <Route path="rfq/:id" element={<SellerRFQDetail />} />
+                <Route path="wallet" element={<Wallet />} />
               </Route>
 
               {/* ── Customer Dashboard ── */}
@@ -97,6 +99,7 @@ function App() {
                 <Route path="profile" element={<CustomerProfile />} />
                 <Route path="custom-orders" element={<CustomOrderList />} />
                 <Route path="wishlist" element={<CustomerWishlist />} />
+                <Route path="wallet" element={<Wallet />} />
                 <Route path="notifications" element={<CustomerNotifications />} />
               </Route>
 
