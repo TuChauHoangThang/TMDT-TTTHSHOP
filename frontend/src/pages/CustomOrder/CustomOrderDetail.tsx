@@ -255,7 +255,7 @@ const CustomOrderDetail: React.FC = () => {
                       ) : (
                         <div style={{ padding: '10px', background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: '8px', fontSize: '0.82rem', color: '#991b1b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span>❌ Số dư ví không đủ để đặt cọc.</span>
-                          <Link to="/wallet" style={{ color: '#1d4ed8', fontWeight: 600, textDecoration: 'underline' }}>Nạp thêm tiền vào ví</Link>
+                          <Link to="/customer/wallet" style={{ color: '#1d4ed8', fontWeight: 600, textDecoration: 'underline' }}>Nạp thêm tiền vào ví</Link>
                         </div>
                       )}
 

@@ -11,18 +11,18 @@ const CustomerLayout: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    if (user) {
-      notificationService.getUnreadCount().then(count => setUnreadCount(count)).catch(() => {});
+    if (!user) {
+      navigate('/login');
+    } else {
+      if (user.role === 'CONTRACTOR') {
+        navigate('/contractor/dashboard');
+      } else {
+        notificationService.getUnreadCount().then(count => setUnreadCount(count)).catch(() => {});
+      }
     }
-  }, [user]);
+  }, [user, navigate]);
 
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
-
-  if (user.role === 'CONTRACTOR') {
-    navigate('/contractor/dashboard');
+  if (!user || user.role === 'CONTRACTOR') {
     return null;
   }
 
@@ -133,6 +133,16 @@ const CustomerLayout: React.FC = () => {
           >
             <i className="fa-regular fa-heart" />
             <span className="nav-text">Sản Phẩm Yêu Thích</span>
+          </NavLink>
+
+          <NavLink
+            to="/customer/wallet"
+            className={({ isActive }) =>
+              `customer-nav-item${isActive ? ' active' : ''}`
+            }
+          >
+            <i className="fa-solid fa-wallet" />
+            <span className="nav-text">Ví Của Tôi</span>
           </NavLink>
 
           <NavLink
