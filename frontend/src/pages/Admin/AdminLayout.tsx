@@ -128,6 +128,14 @@ const AdminLayout: React.FC = () => {
             <i className="fa-solid fa-images" />
             <span className="nav-text">Sản Phẩm & Ảnh</span>
           </NavLink>
+
+          <NavLink
+            to="/admin/escrow"
+            className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+          >
+            <i className="fa-solid fa-shield-halved" />
+            <span className="nav-text">Escrow & Ví</span>
+          </NavLink>
         </nav>
 
         {/* Footer */}

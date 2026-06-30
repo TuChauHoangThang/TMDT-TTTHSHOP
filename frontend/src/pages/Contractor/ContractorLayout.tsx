@@ -108,6 +108,16 @@ const ContractorLayout: React.FC = () => {
             <i className="fa-solid fa-store" />
             <span className="nav-text">Hồ Sơ Cửa Hàng</span>
           </NavLink>
+
+          <NavLink
+            to="/contractor/wallet"
+            className={({ isActive }) =>
+              `contractor-nav-item${isActive ? ' active' : ''}`
+            }
+          >
+            <i className="fa-solid fa-wallet" />
+            <span className="nav-text">Ví Của Tôi</span>
+          </NavLink>
         </nav>
 
         {/* Footer */}
