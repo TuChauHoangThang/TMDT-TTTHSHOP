@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useFavorite } from '../../context/FavoriteContext';
+import { productService } from '../../services/productService';
+import type { Product } from '../../types';
 import '../../css/Header.css';
 import logoImg from '../../assets/Logo.jpeg';
 
@@ -15,10 +17,62 @@ const Header: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const [lang, setLang] = useState('vi');
   const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<Product[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [mobileSubOpen, setMobileSubOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearch = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const trimmed = searchQuery.trim();
+    if (trimmed) {
+      navigate(`/products?keyword=${encodeURIComponent(trimmed)}`);
+      setSearchOpen(false);
+      setSearchQuery('');
+      setSuggestions([]);
+    }
+  };
+
+  const fetchSuggestions = useCallback(async (query: string) => {
+    if (query.trim().length < 1) {
+      setSuggestions([]);
+      return;
+    }
+    setSuggestionsLoading(true);
+    try {
+      const results = await productService.getSuggestions(query.trim(), 6);
+      setSuggestions(results);
+    } catch {
+      setSuggestions([]);
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      fetchSuggestions(searchQuery);
+    }, 300);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [searchQuery, fetchSuggestions]);
+
+  const handleSuggestionClick = (slug: string) => {
+    navigate(`/product/${slug}`);
+    setSearchOpen(false);
+    setSearchQuery('');
+    setSuggestions([]);
+  };
+
+  const formatPrice = (price?: number) => {
+    if (!price) return 'Liên hệ';
+    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+  };
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);
@@ -140,14 +194,67 @@ const Header: React.FC = () => {
               </ul>
 
               <div style={{ position: 'relative' }}>
-                <button className="header-action-btn" onClick={() => setSearchOpen(!searchOpen)}>
+                <button className="header-action-btn" onClick={() => { setSearchOpen(!searchOpen); setTimeout(() => searchInputRef.current?.focus(), 100); }}>
                   <i className="fa fa-magnifying-glass"></i>
                 </button>
                 <div className={`search-dropdown ${searchOpen ? 'open' : ''}`}>
-                  <div className="search-input-wrap">
-                    <i className="fa fa-magnifying-glass"></i>
-                    <input type="text" placeholder="Tìm sofa, bàn ghế, tủ kệ..." />
-                  </div>
+                  <form onSubmit={handleSearch} className="search-input-wrap">
+                    <i className="fa fa-magnifying-glass" onClick={handleSearch} style={{ cursor: 'pointer' }}></i>
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder="Tìm sofa, bàn ghế, tủ kệ..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery && (
+                      <i className="fa fa-xmark" onClick={() => { setSearchQuery(''); setSuggestions([]); searchInputRef.current?.focus(); }} style={{ cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}></i>
+                    )}
+                  </form>
+
+                  {/* Suggestions dropdown */}
+                  {searchQuery.trim().length > 0 && (
+                    <div className="search-suggestions">
+                      {suggestionsLoading ? (
+                        <div className="search-suggestion-loading">
+                          <i className="fa fa-spinner fa-spin"></i> Đang tìm...
+                        </div>
+                      ) : suggestions.length > 0 ? (
+                        <>
+                          {suggestions.map(product => (
+                            <div
+                              key={product.id}
+                              className="search-suggestion-item"
+                              onClick={() => handleSuggestionClick(product.slug)}
+                            >
+                              <img
+                                src={product.image}
+                                alt={product.name}
+                                className="search-suggestion-img"
+                              />
+                              <div className="search-suggestion-info">
+                                <div className="search-suggestion-name">{product.name}</div>
+                                <div className="search-suggestion-category">{product.categoryName}</div>
+                              </div>
+                              <div className="search-suggestion-price">
+                                {formatPrice(product.priceCurrent)}
+                              </div>
+                            </div>
+                          ))}
+                          <div
+                            className="search-suggestion-viewall"
+                            onClick={handleSearch}
+                          >
+                            Xem tất cả kết quả cho "{searchQuery}" <i className="fa fa-arrow-right"></i>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="search-suggestion-empty">
+                          <i className="fa fa-face-meh"></i> Không tìm thấy sản phẩm nào
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -208,7 +315,7 @@ const Header: React.FC = () => {
                           {[
                             { icon: 'fa-user', label: 'Tài Khoản Của Tôi', to: '/customer/dashboard', roles: ['CUSTOMER'] },
                             { icon: 'fa-store', label: 'Kênh Nhà Thầu', to: '/contractor/dashboard', roles: ['CONTRACTOR'] },
-
+                            { icon: 'fa-wallet', label: 'Ví Của Tôi', to: user.role === 'CONTRACTOR' ? '/contractor/wallet' : '/customer/wallet', roles: ['CUSTOMER', 'CONTRACTOR'] },
                             { icon: 'fa-heart', label: 'Danh sách yêu thích', to: '/wishlist', roles: ['CUSTOMER', 'CONTRACTOR', 'ADMIN'] }
                           ]
                           .filter(item => item.roles.includes(user.role as string))

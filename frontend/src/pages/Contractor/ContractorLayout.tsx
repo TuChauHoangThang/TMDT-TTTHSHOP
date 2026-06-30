@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './ContractorLayout.css';
@@ -8,13 +8,15 @@ const ContractorLayout: React.FC = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    } else if (user.role !== 'CONTRACTOR' && user.role !== 'ADMIN') {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
-  if (user.role !== 'CONTRACTOR' && user.role !== 'ADMIN') {
-    navigate('/');
+  if (!user || (user.role !== 'CONTRACTOR' && user.role !== 'ADMIN')) {
     return null;
   }
 

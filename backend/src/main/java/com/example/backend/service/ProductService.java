@@ -47,6 +47,19 @@ public class ProductService {
     }
 
     /**
+     * Gợi ý tìm kiếm (autocomplete)
+     */
+    public List<ProductDto.ProductSummary> getSuggestions(String keyword, int limit) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+        Pageable pageable = PageRequest.of(0, limit);
+        return productRepository.findSuggestions(keyword.trim(), pageable).stream()
+                .map(ProductDto.ProductSummary::from)
+                .toList();
+    }
+
+    /**
      * Chi tiết sản phẩm
      */
     public ProductDto.ProductDetail getProductById(Long id) {

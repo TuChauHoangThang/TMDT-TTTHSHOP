@@ -62,4 +62,16 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      */
     @Query("SELECT COUNT(p) FROM Product p WHERE p.category.id = :categoryId AND p.status = com.example.backend.entity.Product$Status.ACTIVE")
     long countActiveByCategoryId(@Param("categoryId") Long categoryId);
+
+    /**
+     * Gợi ý tìm kiếm: trả về sản phẩm ACTIVE có tên chứa keyword (giới hạn số lượng).
+     */
+    @Query("""
+        SELECT p FROM Product p
+        LEFT JOIN FETCH p.images
+        LEFT JOIN FETCH p.category
+        WHERE p.status = com.example.backend.entity.Product$Status.ACTIVE
+          AND LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    """)
+    List<Product> findSuggestions(@Param("keyword") String keyword, Pageable pageable);
 }
