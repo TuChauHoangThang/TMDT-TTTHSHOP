@@ -20,6 +20,12 @@ export const productService = {
   getProductBySlug: async (slug: string) => {
     const response = await axios.get(`${API_URL}/products/slug/${slug}`);
     return response.data;
+  },
+
+  // Gợi ý tìm kiếm (autocomplete)
+  getSuggestions: async (keyword: string, limit: number = 8): Promise<Product[]> => {
+    const response = await axios.get(`${API_URL}/products/suggestions`, { params: { keyword, limit } });
+    return response.data;
   }
 };
 

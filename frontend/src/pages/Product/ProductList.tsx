@@ -8,6 +8,7 @@ import '../../css/HomePage.css'; // Reusing some CSS
 const ProductList: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const categorySlug = searchParams.get('category');
+  const keyword = searchParams.get('keyword');
   
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -30,6 +31,7 @@ const ProductList: React.FC = () => {
       setLoading(true);
       try {
         const data = await productService.getProducts({ 
+          keyword: keyword || undefined,
           categorySlug: categorySlug || undefined,
           size: 20
         });
@@ -41,13 +43,19 @@ const ProductList: React.FC = () => {
       }
     };
     fetchProducts();
-  }, [categorySlug]);
+  }, [categorySlug, keyword]);
+
+  const getPageTitle = () => {
+    if (keyword) return `Kết quả tìm kiếm: "${keyword}"`;
+    if (categorySlug) return `Danh mục: ${categories.find(c => c.slug === categorySlug)?.name || categorySlug}`;
+    return 'Tất Cả Sản Phẩm';
+  };
 
   return (
     <main style={{ paddingTop: '8rem', paddingBottom: '4rem', background: '#fcfcfc' }}>
       <div className="container">
         <h1 style={{ fontSize: '2.5rem', marginBottom: '2rem', textAlign: 'center' }}>
-          {categorySlug ? `Danh mục: ${categories.find(c => c.slug === categorySlug)?.name || categorySlug}` : 'Tất Cả Sản Phẩm'}
+          {getPageTitle()}
         </h1>
 
         <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', gap: '2rem' }}>
