@@ -120,6 +120,14 @@ const AdminLayout: React.FC = () => {
             <i className="fa-solid fa-hammer" />
             <span className="nav-text">Nhà Thầu</span>
           </NavLink>
+
+          <NavLink
+            to="/admin/products"
+            className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+          >
+            <i className="fa-solid fa-images" />
+            <span className="nav-text">Sản Phẩm & Ảnh</span>
+          </NavLink>
         </nav>
 
         {/* Footer */}

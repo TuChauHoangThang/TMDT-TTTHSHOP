@@ -20,6 +20,7 @@ public class AdminController {
     @Autowired private CustomOrderRequestRepository customOrderRequestRepository;
     @Autowired private ShopRepository shopRepository;
     @Autowired private ProductRepository productRepository;
+    @Autowired private ProductImageRepository productImageRepository;
 
     // ─────────────────────────────────────────────────────────────
     // DASHBOARD STATISTICS
@@ -282,6 +283,160 @@ public class AdminController {
             } catch (IllegalArgumentException e) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Trạng thái không hợp lệ: " + newStatus));
             }
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // PRODUCT MANAGEMENT (Admin)
+    // ─────────────────────────────────────────────────────────────
+
+    /** Lấy danh sách tất cả sản phẩm kèm ảnh đại diện */
+    @GetMapping("/products")
+    public ResponseEntity<?> getAllProducts() {
+        List<Product> products = productRepository.findAll();
+        List<Map<String, Object>> result = products.stream().map(p -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", p.getId());
+            m.put("name", p.getName());
+            m.put("slug", p.getSlug());
+            m.put("categoryName", p.getCategory() != null ? p.getCategory().getName() : "");
+            m.put("priceCurrent", p.getPriceCurrent());
+            m.put("priceOriginal", p.getPriceOriginal());
+            m.put("priceContact", p.getPriceContact());
+            m.put("status", p.getStatus().name());
+            m.put("ratingStars", p.getRatingStars());
+            m.put("ratingCount", p.getRatingCount());
+            // Ảnh đại diện (primary)
+            List<ProductImage> imgs = productImageRepository.findByProductIdOrderBySortOrderAsc(p.getId());
+            String primaryImg = imgs.stream()
+                .filter(ProductImage::isPrimary)
+                .map(ProductImage::getImageUrl)
+                .findFirst()
+                .orElse(imgs.isEmpty() ? "" : imgs.get(0).getImageUrl());
+            m.put("primaryImage", primaryImg);
+            m.put("imageCount", imgs.size());
+            return m;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+    /** Lấy tất cả ảnh của 1 sản phẩm */
+    @GetMapping("/products/{id}/images")
+    public ResponseEntity<?> getProductImages(@PathVariable Long id) {
+        if (!productRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        List<ProductImage> images = productImageRepository.findByProductIdOrderBySortOrderAsc(id);
+        List<Map<String, Object>> result = images.stream().map(img -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", img.getId());
+            m.put("imageUrl", img.getImageUrl());
+            m.put("isPrimary", img.isPrimary());
+            m.put("sortOrder", img.getSortOrder());
+            return m;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+    /** Cập nhật URL của 1 ảnh cụ thể theo imageId */
+    @PutMapping("/products/images/{imageId}")
+    public ResponseEntity<?> updateImageUrl(
+            @PathVariable Long imageId,
+            @RequestBody Map<String, String> body) {
+        String newUrl = body.get("imageUrl");
+        if (newUrl == null || newUrl.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Thiếu trường imageUrl"));
+        }
+        return productImageRepository.findById(imageId).map(img -> {
+            img.setImageUrl(newUrl.trim());
+            productImageRepository.save(img);
+            return ResponseEntity.ok(Map.of(
+                "message", "Cập nhật ảnh thành công",
+                "id", img.getId(),
+                "imageUrl", img.getImageUrl()
+            ));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Thay toàn bộ ảnh của 1 sản phẩm (xóa cũ, thêm mới) */
+    @PutMapping("/products/{id}/images")
+    public ResponseEntity<?> replaceProductImages(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        return productRepository.findById(id).map(product -> {
+            @SuppressWarnings("unchecked")
+            List<String> urls = (List<String>) body.get("imageUrls");
+            if (urls == null || urls.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Danh sách imageUrls không được rỗng"));
+            }
+            // Xóa ảnh cũ
+            productImageRepository.deleteByProductId(id);
+            // Thêm ảnh mới
+            for (int i = 0; i < urls.size(); i++) {
+                ProductImage img = new ProductImage();
+                img.setProduct(product);
+                img.setImageUrl(urls.get(i).trim());
+                img.setPrimary(i == 0);
+                img.setSortOrder(i);
+                productImageRepository.save(img);
+            }
+            return ResponseEntity.ok(Map.of(
+                "message", "Đã cập nhật " + urls.size() + " ảnh cho sản phẩm",
+                "productId", id
+            ));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Thêm 1 ảnh mới vào sản phẩm */
+    @PostMapping("/products/{id}/images")
+    public ResponseEntity<?> addProductImage(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body) {
+        return productRepository.findById(id).map(product -> {
+            String url = (String) body.get("imageUrl");
+            if (url == null || url.isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Thiếu trường imageUrl"));
+            }
+            boolean isPrimary = Boolean.TRUE.equals(body.get("isPrimary"));
+            List<ProductImage> existing = productImageRepository.findByProductIdOrderBySortOrderAsc(id);
+            // Nếu set primary mới, bỏ primary cũ
+            if (isPrimary) {
+                existing.forEach(img -> { img.setPrimary(false); productImageRepository.save(img); });
+            }
+            ProductImage img = new ProductImage();
+            img.setProduct(product);
+            img.setImageUrl(url.trim());
+            img.setPrimary(isPrimary || existing.isEmpty());
+            img.setSortOrder(existing.size());
+            productImageRepository.save(img);
+            return ResponseEntity.ok(Map.of(
+                "message", "Đã thêm ảnh thành công",
+                "id", img.getId(),
+                "imageUrl", img.getImageUrl(),
+                "isPrimary", img.isPrimary()
+            ));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Xóa 1 ảnh */
+    @DeleteMapping("/products/images/{imageId}")
+    public ResponseEntity<?> deleteProductImage(@PathVariable Long imageId) {
+        return productImageRepository.findById(imageId).map(img -> {
+            productImageRepository.delete(img);
+            return ResponseEntity.ok(Map.of("message", "Đã xóa ảnh"));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Set ảnh làm primary */
+    @PatchMapping("/products/images/{imageId}/set-primary")
+    public ResponseEntity<?> setPrimaryImage(@PathVariable Long imageId) {
+        return productImageRepository.findById(imageId).map(img -> {
+            // Bỏ primary tất cả ảnh cùng sản phẩm
+            productImageRepository.findByProductIdOrderBySortOrderAsc(img.getProduct().getId())
+                .forEach(i -> { i.setPrimary(false); productImageRepository.save(i); });
+            img.setPrimary(true);
+            productImageRepository.save(img);
+            return ResponseEntity.ok(Map.of("message", "Đã set ảnh đại diện", "imageId", imageId));
         }).orElse(ResponseEntity.notFound().build());
     }
 }
