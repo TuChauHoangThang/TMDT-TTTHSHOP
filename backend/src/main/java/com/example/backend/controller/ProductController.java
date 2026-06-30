@@ -42,6 +42,16 @@ public class ProductController {
     }
 
     /**
+     * Gợi ý tìm kiếm (autocomplete)
+     */
+    @GetMapping("/suggestions")
+    public ResponseEntity<List<ProductDto.ProductSummary>> getSuggestions(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "8") int limit) {
+        return ResponseEntity.ok(productService.getSuggestions(keyword, limit));
+    }
+
+    /**
      * Chi tiết sản phẩm theo ID
      */
     @GetMapping("/{id}")
