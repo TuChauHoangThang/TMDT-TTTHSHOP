@@ -40,7 +40,6 @@ import AdminCustomers from './pages/Admin/AdminCustomers';
 import AdminContractors from './pages/Admin/AdminContractors';
 import AdminProducts from './pages/Admin/AdminProducts';
 import AdminEscrowDashboard from './pages/Admin/AdminEscrowDashboard';
-import Wallet from './pages/Customer/Wallet';
 import ScrollToTop from './components/ScrollToTop/ScrollToTop';
 import AboutPage from './pages/About/AboutPage';
 import './App.css';
