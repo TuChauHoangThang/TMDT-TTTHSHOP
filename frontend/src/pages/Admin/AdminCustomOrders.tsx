@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { adminService } from '../../services/adminService';
 import type { AdminCustomOrder, AdminCustomOrderDetail } from '../../services/adminService';
 import { toast } from 'react-toastify';
+import { usePagination } from '../../hooks/usePagination';
+import Pagination from '../../components/Pagination/Pagination';
 
 const CUSTOM_STATUSES = ['OPEN', 'QUOTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
 
@@ -38,6 +40,7 @@ const AdminCustomOrders: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<AdminCustomOrderDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const pagination = usePagination(filtered, 15);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
@@ -59,6 +62,7 @@ const AdminCustomOrders: React.FC = () => {
       );
     }
     setFiltered(result);
+    pagination.setPage(1);
   }, [search, statusFilter, orders]);
 
   const openDetail = async (id: number) => {
@@ -274,6 +278,7 @@ const AdminCustomOrders: React.FC = () => {
                 Không có đơn yêu cầu nào
               </div>
           ) : (
+              <>
               <div className="admin-table-wrap">
                 <table className="admin-table">
                   <thead>
@@ -290,7 +295,7 @@ const AdminCustomOrders: React.FC = () => {
                   </tr>
                   </thead>
                   <tbody>
-                  {filtered.map(order => (
+                  {pagination.paged.map(order => (
                       <tr key={order.id}>
                         <td><span className="id-cell">#{order.id}</span></td>
                         <td>
@@ -351,6 +356,8 @@ const AdminCustomOrders: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+              <Pagination {...pagination} onPageChange={p => { pagination.setPage(p); }} />
+              </>
           )}
         </div>
 

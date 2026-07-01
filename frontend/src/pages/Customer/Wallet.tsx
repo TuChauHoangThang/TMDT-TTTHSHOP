@@ -32,11 +32,37 @@ interface WithdrawReq {
   processedAt?: string;
 }
 
+interface EscrowRecord {
+  id: number;
+  request: { id: number; title: string };
+  contractor: { id: number; fullName: string };
+  amount: number;
+  commissionAmount: number;
+  netAmount: number;
+  status: 'PENDING' | 'HELD' | 'RELEASED' | 'REFUNDED' | 'DISPUTED';
+  paymentMethod: string;
+  disputeReason?: string;
+  createdAt: string;
+  releasedAt?: string;
+  refundedAt?: string;
+}
+
 const Wallet: React.FC = () => {
   const [wallet, setWallet] = useState<{ userId: number; fullName: string; walletBalance: number } | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [withdrawRequests, setWithdrawRequests] = useState<WithdrawReq[]>([]);
+  const [escrows, setEscrows] = useState<EscrowRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'wallet'|'escrow'>('wallet');
+
+  // Dispute modal state
+  const [disputingEscrow, setDisputingEscrow] = useState<EscrowRecord | null>(null);
+  const [disputeReason, setDisputeReason] = useState('');
+  const [disputeSubmitting, setDisputeSubmitting] = useState(false);
+
+  // Confirm modal state
+  const [confirmingRelease, setConfirmingRelease] = useState<EscrowRecord | null>(null);
+  const [releaseSubmitting, setReleaseSubmitting] = useState(false);
 
   // Forms state
   const [depositAmt, setDepositAmt] = useState('');
@@ -57,14 +83,16 @@ const Wallet: React.FC = () => {
 
   const fetchAllData = async () => {
     try {
-      const wData = await customOrderService.getWallet();
+      const [wData, txData, wrData, escrowData] = await Promise.all([
+        customOrderService.getWallet(),
+        customOrderService.getWalletTransactions(),
+        customOrderService.getWithdrawalRequests(),
+        customOrderService.getMyEscrows().catch(() => []),
+      ]);
       setWallet(wData);
-      
-      const txData = await customOrderService.getWalletTransactions();
       setTransactions(txData);
-
-      const wrData = await customOrderService.getWithdrawalRequests();
       setWithdrawRequests(wrData);
+      setEscrows(escrowData);
     } catch (error) {
       console.error('Lỗi khi lấy dữ liệu ví:', error);
     } finally {
@@ -151,6 +179,42 @@ const Wallet: React.FC = () => {
     }
   };
 
+  // ── Xác nhận hoàn thành đơn hàng → giải ngân ──────────────────
+  const handleConfirmRelease = async () => {
+    if (!confirmingRelease) return;
+    setReleaseSubmitting(true);
+    try {
+      await customOrderService.releaseEscrow(confirmingRelease.request.id);
+      showToast('Đã xác nhận! Admin sẽ kiểm duyệt và giải ngân cho nhà thầu sớm nhất.', 'success');
+      setConfirmingRelease(null);
+      fetchAllData();
+    } catch (e: any) {
+      showToast(e?.response?.data?.error || 'Xác nhận thất bại', 'error');
+    } finally {
+      setReleaseSubmitting(false);
+    }
+  };
+
+  // ── Gửi khiếu nại ─────────────────────────────────────────────
+  const handleSubmitDispute = async () => {
+    if (!disputingEscrow) return;
+    if (!disputeReason.trim()) {
+      showToast('Vui lòng nhập lý do khiếu nại', 'error'); return;
+    }
+    setDisputeSubmitting(true);
+    try {
+      await customOrderService.disputeEscrow(disputingEscrow.request.id, disputeReason.trim());
+      showToast('Đã gửi khiếu nại! Admin sẽ xem xét và phân xử trong 1–3 ngày làm việc.', 'success');
+      setDisputingEscrow(null);
+      setDisputeReason('');
+      fetchAllData();
+    } catch (e: any) {
+      showToast(e?.response?.data?.error || 'Gửi khiếu nại thất bại', 'error');
+    } finally {
+      setDisputeSubmitting(false);
+    }
+  };
+
   if (loading) return <div className="co-page"><div className="co-loading"><div className="co-spinner"></div></div></div>;
   if (!wallet) return <div className="co-page"><div className="co-container"><p>Không thể lấy thông tin ví. Vui lòng đăng nhập lại.</p></div></div>;
 
@@ -165,8 +229,38 @@ const Wallet: React.FC = () => {
           <span>Ví tiền & Giao dịch</span>
         </div>
 
+        {/* Tab bar */}
+        <div style={{ display:'flex', gap:8, marginBottom:'1.5rem', background:'#f1f5f9', padding:4, borderRadius:12, width:'fit-content' }}>
+          <button onClick={() => setActiveTab('wallet')} style={{
+            border:'none', padding:'9px 22px', borderRadius:9, cursor:'pointer', fontWeight:600, fontSize:'0.85rem', fontFamily:'inherit',
+            background: activeTab==='wallet' ? '#fff' : 'transparent',
+            color: activeTab==='wallet' ? '#3d5c49' : '#64748b',
+            boxShadow: activeTab==='wallet' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none', transition:'all 0.2s'
+          }}>
+            <i className="fa-solid fa-wallet" style={{ marginRight:6 }}/>Ví Tiền
+          </button>
+          <button onClick={() => setActiveTab('escrow')} style={{
+            border:'none', padding:'9px 22px', borderRadius:9, cursor:'pointer', fontWeight:600, fontSize:'0.85rem', fontFamily:'inherit',
+            background: activeTab==='escrow' ? '#fff' : 'transparent',
+            color: activeTab==='escrow' ? '#3d5c49' : '#64748b',
+            boxShadow: activeTab==='escrow' ? '0 2px 8px rgba(0,0,0,0.08)' : 'none', transition:'all 0.2s'
+          }}>
+            <i className="fa-solid fa-shield-halved" style={{ marginRight:6 }}/>Đơn Tạm Giữ
+            {escrows.filter(e => e.status === 'DISPUTED').length > 0 && (
+              <span style={{ background:'#dc2626', color:'#fff', borderRadius:10, padding:'1px 7px', fontSize:'0.7rem', marginLeft:6 }}>
+                {escrows.filter(e => e.status === 'DISPUTED').length}
+              </span>
+            )}
+            {escrows.filter(e => e.status === 'COMPLETED_BY_CONTRACTOR' as any).length > 0 && (
+              <span style={{ background:'#16a34a', color:'#fff', borderRadius:10, padding:'1px 7px', fontSize:'0.7rem', marginLeft:6 }}>
+                Cần xác nhận
+              </span>
+            )}
+          </button>
+        </div>
+
+        {activeTab === 'wallet' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', alignItems: 'flex-start' }}>
-          
           {/* LEFT COLUMN: BALANCE & FORMS */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             
@@ -434,8 +528,174 @@ const Wallet: React.FC = () => {
           </div>
 
         </div>
+        )}
+
+        {/* ═══ TAB ESCROW ═══ */}
+        {activeTab === 'escrow' && (
+          <div>
+            {escrows.length === 0 ? (
+              <div style={{ textAlign:'center', padding:'4rem', color:'#94a3b8' }}>
+                <i className="fa-solid fa-shield-halved" style={{ fontSize:'2.5rem', display:'block', marginBottom:12, opacity:0.3 }}/>
+                Chưa có đơn hàng tạm giữ nào.
+              </div>
+            ) : escrows.map(esc => {
+              const statusMap: Record<string, {label:string;bg:string;color:string}> = {
+                PENDING:   {label:'⏳ Chờ thanh toán',        bg:'#fef3c7', color:'#b45309'},
+                HELD:      {label:'🔒 Tiền đang tạm giữ',      bg:'#dbeafe', color:'#1e40af'},
+                AWAITING_RELEASE: {label:'⏳ Chờ admin giải ngân', bg:'#dcfce7', color:'#166534'},
+                RELEASED:  {label:'✅ Đã giải ngân',            bg:'#dcfce7', color:'#166534'},
+                REFUNDED:  {label:'↩️ Đã hoàn tiền',            bg:'#f3e8ff', color:'#7e22ce'},
+                DISPUTED:  {label:'⚠️ Đang khiếu nại',         bg:'#fee2e2', color:'#991b1b'},
+              };
+              const s = statusMap[esc.status] ?? {label: esc.status, bg:'#f1f5f9', color:'#64748b'};
+              const needConfirm = (esc.status as string) === 'COMPLETED_BY_CONTRACTOR';
+              return (
+                <div key={esc.id} style={{ border:`2px solid ${esc.status==='DISPUTED'?'#fca5a5':needConfirm?'#86efac':'#e2e8f0'}`, borderRadius:14, marginBottom:16, overflow:'hidden' }}>
+                  {/* Header */}
+                  <div style={{ background: needConfirm?'#f0fdf4':esc.status==='DISPUTED'?'#fef2f2':'#f8fafc', padding:'12px 18px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:8 }}>
+                    <div>
+                      <strong>ESC-{esc.id}</strong>
+                      <span style={{ color:'#64748b', fontSize:'0.82rem', marginLeft:10 }}>
+                        Đơn #{esc.request?.id} — {esc.request?.title}
+                      </span>
+                    </div>
+                    <span style={{ ...s, padding:'3px 12px', borderRadius:20, fontSize:'0.78rem', fontWeight:700 }}>{needConfirm ? '🚚 Nhà thầu đã giao — Cần xác nhận' : s.label}</span>
+                  </div>
+                  {/* Body */}
+                  <div style={{ padding:'14px 18px' }}>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))', gap:'8px 20px', fontSize:'0.85rem', marginBottom:12 }}>
+                      <div><span style={{color:'#64748b'}}>Nhà thầu: </span><strong>{esc.contractor?.fullName}</strong></div>
+                      <div><span style={{color:'#64748b'}}>Tổng đơn: </span><strong style={{color:'#dc2626'}}>{fmtVND(esc.amount)}</strong></div>
+                      <div><span style={{color:'#64748b'}}>Hoa hồng platform: </span><span style={{color:'#d97706'}}>{fmtVND(esc.commissionAmount)} (5%)</span></div>
+                      <div><span style={{color:'#64748b'}}>Nhà thầu nhận: </span><strong style={{color:'#16a34a'}}>{fmtVND(esc.netAmount)}</strong></div>
+                      <div><span style={{color:'#64748b'}}>Thanh toán: </span>{esc.paymentMethod||'—'}</div>
+                      <div><span style={{color:'#64748b'}}>Ngày tạo: </span>{fmtDate(esc.createdAt)}</div>
+                      {esc.releasedAt && <div><span style={{color:'#64748b'}}>Giải ngân: </span>{fmtDate(esc.releasedAt)}</div>}
+                      {esc.refundedAt && <div><span style={{color:'#64748b'}}>Hoàn tiền: </span>{fmtDate(esc.refundedAt)}</div>}
+                    </div>
+                    {/* Nhà thầu đã giao → khách xác nhận hoặc khiếu nại */}
+                    {needConfirm && (
+                      <div style={{ background:'#f0fdf4', border:'1px solid #86efac', borderRadius:10, padding:'14px', marginTop:8 }}>
+                        <p style={{ margin:'0 0 12px', fontWeight:600, color:'#166534', fontSize:'0.9rem' }}>
+                          <i className="fa-solid fa-truck-ramp-box" style={{marginRight:8}}/>Nhà thầu báo đã hoàn thành và bàn giao. Bạn đã nhận được sản phẩm chưa?
+                        </p>
+                        <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+                          <button className="btn btn--primary" style={{ background:'#166534', color:'#fff', border:'none', padding:'10px 20px', borderRadius:8, cursor:'pointer', fontWeight:600, fontSize:'0.85rem' }}
+                            onClick={() => setConfirmingRelease(esc)}>
+                            <i className="fa-solid fa-circle-check" style={{marginRight:6}}/>Xác nhận đã nhận hàng
+                          </button>
+                          <button style={{ background:'#fee2e2', color:'#991b1b', border:'1px solid #fca5a5', padding:'10px 20px', borderRadius:8, cursor:'pointer', fontWeight:600, fontSize:'0.85rem' }}
+                            onClick={() => setDisputingEscrow(esc)}>
+                            <i className="fa-solid fa-triangle-exclamation" style={{marginRight:6}}/>Có vấn đề → Khiếu nại
+                          </button>
+                        </div>
+                        <p style={{ margin:'10px 0 0', fontSize:'0.78rem', color:'#64748b' }}>
+                          <i className="fa-solid fa-circle-info" style={{marginRight:4}}/>Sau khi xác nhận, Admin sẽ kiểm duyệt và giải ngân tiền cho nhà thầu.
+                        </p>
+                      </div>
+                    )}
+                    {/* Đang tạm giữ → có thể khiếu nại */}
+                    {esc.status === 'HELD' && (
+                      <div style={{ marginTop:8, textAlign:'right' }}>
+                        <button style={{ background:'transparent', color:'#dc2626', border:'1px solid #fca5a5', padding:'6px 14px', borderRadius:7, cursor:'pointer', fontSize:'0.8rem', fontWeight:600 }}
+                          onClick={() => setDisputingEscrow(esc)}>
+                          <i className="fa-solid fa-flag" style={{marginRight:6}}/>Mở khiếu nại
+                        </button>
+                      </div>
+                    )}
+                    {/* Chờ admin giải ngân */}
+                    {esc.status === 'AWAITING_RELEASE' && (
+                      <div style={{ background:'#f0fdf4', border:'1px solid #86efac', borderRadius:8, padding:'10px 14px', marginTop:8, fontSize:'0.85rem' }}>
+                        <strong style={{color:'#166534'}}><i className="fa-solid fa-clock" style={{marginRight:6}}/>Đang chờ Admin giải ngân</strong>
+                        <p style={{ margin:'4px 0 0', color:'#64748b', fontSize:'0.78rem' }}>Bạn đã xác nhận nhận hàng. Admin sẽ kiểm duyệt và chuyển tiền cho nhà thầu trong thời gian sớm nhất.</p>
+                      </div>
+                    )}
+                    {/* Đang tranh chấp */}
+                    {esc.status === 'DISPUTED' && (
+                      <div style={{ background:'#fef2f2', border:'1px solid #fca5a5', borderRadius:8, padding:'10px 14px', marginTop:8, fontSize:'0.85rem' }}>
+                        <strong style={{color:'#991b1b'}}><i className="fa-solid fa-clock" style={{marginRight:6}}/>Khiếu nại đang chờ Admin xử lý</strong>
+                        <p style={{ margin:'4px 0 0', color:'#b91c1c', fontStyle:'italic' }}>Lý do: "{esc.disputeReason}"</p>
+                        <p style={{ margin:'6px 0 0', color:'#64748b', fontSize:'0.78rem' }}>Admin sẽ liên hệ và phân xử trong 1–3 ngày làm việc.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
       </div>
+
+      {/* ═══ MODAL: Xác nhận đã nhận hàng ═══ */}
+      {confirmingRelease && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+          onClick={() => setConfirmingRelease(null)}>
+          <div style={{ background:'#fff', borderRadius:16, padding:'28px', maxWidth:460, width:'100%', boxShadow:'0 20px 60px rgba(0,0,0,0.2)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ textAlign:'center', marginBottom:20 }}>
+              <i className="fa-solid fa-circle-check" style={{ fontSize:'3rem', color:'#16a34a', display:'block', marginBottom:12 }}/>
+              <h3 style={{ margin:0, fontFamily:'Playfair Display, serif', fontSize:'1.2rem' }}>Xác nhận đã nhận hàng</h3>
+            </div>
+            <div style={{ background:'#f0fdf4', border:'1px solid #86efac', borderRadius:10, padding:'14px', marginBottom:20, fontSize:'0.88rem' }}>
+              <div><strong>Đơn hàng:</strong> {confirmingRelease.request?.title}</div>
+              <div style={{ marginTop:6 }}><strong>Số tiền escrow:</strong> <span style={{color:'#16a34a', fontWeight:700}}>{fmtVND(confirmingRelease.amount)}</span></div>
+            </div>
+            <div style={{ background:'#fffbeb', border:'1px solid #fde68a', borderRadius:10, padding:'12px 14px', marginBottom:20, fontSize:'0.85rem', color:'#92400e' }}>
+              <i className="fa-solid fa-circle-info" style={{marginRight:6}}/>
+              Sau khi xác nhận, Admin sẽ kiểm tra và <strong>giải ngân tiền cho nhà thầu</strong> trong thời gian sớm nhất. Tiền hiện vẫn được giữ an toàn cho đến khi Admin giải ngân.
+            </div>
+            <p style={{ fontSize:'0.85rem', color:'#64748b', marginBottom:20, textAlign:'center' }}>
+              Bạn có chắc đã nhận được sản phẩm đúng như yêu cầu?
+            </p>
+            <div style={{ display:'flex', gap:10 }}>
+              <button style={{ flex:1, padding:'11px', background:'#166534', color:'#fff', border:'none', borderRadius:9, fontWeight:700, fontSize:'0.9rem', cursor:'pointer' }}
+                onClick={handleConfirmRelease} disabled={releaseSubmitting}>
+                {releaseSubmitting ? 'Đang xử lý...' : '✅ Xác nhận đã nhận hàng'}
+              </button>
+              <button style={{ flex:1, padding:'11px', background:'#f1f5f9', color:'#475569', border:'none', borderRadius:9, fontWeight:600, fontSize:'0.9rem', cursor:'pointer' }}
+                onClick={() => setConfirmingRelease(null)}>
+                Huỷ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ MODAL: Khiếu nại ═══ */}
+      {disputingEscrow && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+          onClick={() => setDisputingEscrow(null)}>
+          <div style={{ background:'#fff', borderRadius:16, padding:'28px', maxWidth:500, width:'100%', boxShadow:'0 20px 60px rgba(0,0,0,0.2)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ textAlign:'center', marginBottom:20 }}>
+              <i className="fa-solid fa-flag" style={{ fontSize:'3rem', color:'#dc2626', display:'block', marginBottom:12 }}/>
+              <h3 style={{ margin:0, fontFamily:'Playfair Display, serif', fontSize:'1.2rem' }}>Gửi Khiếu Nại</h3>
+              <p style={{ color:'#64748b', fontSize:'0.85rem', margin:'8px 0 0' }}>Đơn: {disputingEscrow.request?.title}</p>
+            </div>
+            <div style={{ background:'#fff7ed', border:'1px solid #fed7aa', borderRadius:10, padding:'12px 14px', marginBottom:16, fontSize:'0.83rem', color:'#92400e' }}>
+              <i className="fa-solid fa-circle-info" style={{marginRight:6}}/>
+              Khiếu nại sẽ tạm dừng giao dịch. Admin sẽ xem xét và liên hệ cả hai bên trong <strong>1–3 ngày làm việc</strong>. Tiền vẫn được giữ an toàn cho đến khi có phán quyết.
+            </div>
+            <label style={{ display:'block', fontWeight:600, fontSize:'0.85rem', color:'#374151', marginBottom:8 }}>
+              Mô tả vấn đề gặp phải: <span style={{color:'#dc2626'}}>*</span>
+            </label>
+            <textarea rows={4} style={{ width:'100%', padding:'10px 12px', border:'1px solid #d1d5db', borderRadius:9, fontSize:'0.85rem', fontFamily:'inherit', resize:'vertical', outline:'none', marginBottom:16 }}
+              placeholder="Ví dụ: Sản phẩm không đúng như mô tả, bị hư hỏng khi nhận hàng, nhà thầu không liên lạc được..."
+              value={disputeReason} onChange={e => setDisputeReason(e.target.value)} />
+            <div style={{ display:'flex', gap:10 }}>
+              <button style={{ flex:1, padding:'11px', background:'#dc2626', color:'#fff', border:'none', borderRadius:9, fontWeight:700, fontSize:'0.9rem', cursor:'pointer' }}
+                onClick={handleSubmitDispute} disabled={disputeSubmitting || !disputeReason.trim()}>
+                {disputeSubmitting ? 'Đang gửi...' : '⚠️ Gửi khiếu nại'}
+              </button>
+              <button style={{ flex:1, padding:'11px', background:'#f1f5f9', color:'#475569', border:'none', borderRadius:9, fontWeight:600, fontSize:'0.9rem', cursor:'pointer' }}
+                onClick={() => { setDisputingEscrow(null); setDisputeReason(''); }}>
+                Huỷ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && (
         <div className={`co-toast co-toast--${toast.type}`} style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000 }}>

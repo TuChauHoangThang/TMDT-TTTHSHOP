@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { adminService } from '../../services/adminService';
 import type { AdminContractor } from '../../services/adminService';
 import { toast } from 'react-toastify';
+import { usePagination } from '../../hooks/usePagination';
+import Pagination from '../../components/Pagination/Pagination';
 
 const fmtDate = (s?: string) =>
     s ? new Date(s).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
@@ -24,6 +26,7 @@ const AdminContractors: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [selectedContractor, setSelectedContractor] = useState<AdminContractor | null>(null);
+  const pagination = usePagination(filtered, 15);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
@@ -47,6 +50,7 @@ const AdminContractors: React.FC = () => {
       );
     }
     setFiltered(result);
+    pagination.setPage(1);
   }, [search, statusFilter, contractors]);
 
   const handleToggle = async (id: number) => {
@@ -260,6 +264,7 @@ const AdminContractors: React.FC = () => {
                 Không tìm thấy nhà thầu nào
               </div>
           ) : (
+              <>
               <div className="admin-table-wrap">
                 <table className="admin-table">
                   <thead>
@@ -275,7 +280,7 @@ const AdminContractors: React.FC = () => {
                   </tr>
                   </thead>
                   <tbody>
-                  {filtered.map(contractor => (
+                  {pagination.paged.map(contractor => (
                       <tr key={contractor.id}>
                         <td><span className="id-cell">#{contractor.id}</span></td>
                         <td>
@@ -347,6 +352,8 @@ const AdminContractors: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+              <Pagination {...pagination} onPageChange={pagination.setPage} />
+              </>
           )}
         </div>
         

@@ -20,7 +20,8 @@ public class CustomOrderRequest {
         WAITING_FOR_PAYMENT,     // Khách hàng đã chọn báo giá, chờ thanh toán tạm giữ
         IN_PROGRESS,             // Tiền đã tạm giữ, đang thực hiện
         COMPLETED_BY_CONTRACTOR, // Nhà thầu đã hoàn thành và giao hàng, chờ khách xác nhận
-        COMPLETED,               // Đã giải ngân, hoàn thành
+        COMPLETED_BY_CUSTOMER,   // Khách đã xác nhận nhận hàng, chờ admin giải ngân
+        COMPLETED,               // Admin đã giải ngân, hoàn thành
         DISPUTED,                // Đang có tranh chấp khiếu nại
         CANCELLED                // Đã hủy
     }

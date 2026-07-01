@@ -1,21 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import HeroSlider from '../../components/HeroSlider/HeroSlider';
 import ProductCard from '../../components/ProductCard/ProductCard';
 import { productService } from '../../services/productService';
+import { useAuth } from '../../context/AuthContext';
 import type { Product } from '../../types';
 import '../../css/HomePage.css';
 
 const HomePage: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [bestsellerProducts, setBestsellerProducts] = useState<Product[]>([]);
   const [livingRoomProducts, setLivingRoomProducts] = useState<Product[]>([]);
   const [, setLoading] = useState(true);
+
+  // Admin không ở trang chủ — redirect về dashboard
+  useEffect(() => {
+    if (user?.role === 'ADMIN') {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        // Fetch 8 featured products
         const products = await productService.getFeatured(8);
         setBestsellerProducts(products.slice(0, 4));
         setLivingRoomProducts(products.slice(4, 8));
@@ -25,7 +34,6 @@ const HomePage: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchProducts();
   }, []);
 

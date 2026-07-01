@@ -3,13 +3,15 @@ import type { CustomOrderRequest, CustomOrderQuote } from '../types/customOrder'
 
 const API_URL = 'http://localhost:8080/api/custom-orders';
 
+// Header theo role: gửi đúng header cho từng role
 const getCustomerHeaders = () => {
   const userStr = localStorage.getItem('auth_user');
-  if (userStr) {
-    const user = JSON.parse(userStr);
-    return { 'X-Customer-Id': String(user.id) };
-  }
-  return {};
+  if (!userStr) return {};
+  const user = JSON.parse(userStr);
+  // Admin dùng X-User-Id, Customer dùng X-Customer-Id
+  if (user.role === 'ADMIN') return { 'X-User-Id': String(user.id) };
+  if (user.role === 'CONTRACTOR') return { 'X-Customer-Id': String(user.id) }; // fallback cho customer-like calls
+  return { 'X-Customer-Id': String(user.id) };
 };
 
 const getContractorHeaders = () => {
@@ -163,27 +165,69 @@ export const customOrderService = {
   // ================= ADMIN ESCROW & WALLET API =================
 
   getAllEscrows: async (): Promise<any> => {
-    const response = await axios.get(`http://localhost:8080/api/escrows/admin/all`, { headers: getCustomerHeaders() });
+    const token = localStorage.getItem('auth_token');
+    const headers: any = { 'Authorization': `Bearer ${token}` };
+    const userStr = localStorage.getItem('auth_user');
+    if (userStr) { const u = JSON.parse(userStr); headers['X-User-Id'] = String(u.id); }
+    const response = await axios.get(`http://localhost:8080/api/escrows/admin/all`, { headers });
     return response.data;
   },
 
   resolveDispute: async (escrowId: number, resolution: 'RELEASE' | 'REFUND', notes: string): Promise<any> => {
-    const response = await axios.post(`http://localhost:8080/api/escrows/admin/${escrowId}/resolve`, { resolution, notes }, { headers: getCustomerHeaders() });
+    const token = localStorage.getItem('auth_token');
+    const response = await axios.post(`http://localhost:8080/api/escrows/admin/${escrowId}/resolve`, { resolution, notes },
+      { headers: { 'Authorization': `Bearer ${token}` } });
+    return response.data;
+  },
+
+  adminReleaseEscrow: async (escrowId: number): Promise<any> => {
+    const token = localStorage.getItem('auth_token');
+    const response = await axios.post(`http://localhost:8080/api/escrows/admin/${escrowId}/release`, {},
+      { headers: { 'Authorization': `Bearer ${token}` } });
     return response.data;
   },
 
   getAllWithdrawRequestsAdmin: async (): Promise<any> => {
-    const response = await axios.get(`http://localhost:8080/api/users/wallet/admin/withdraw-requests`, { headers: getCustomerHeaders() });
+    const token = localStorage.getItem('auth_token');
+    const response = await axios.get(`http://localhost:8080/api/users/wallet/admin/withdraw-requests`,
+      { headers: { 'Authorization': `Bearer ${token}` } });
     return response.data;
   },
 
   approveWithdrawalAdmin: async (id: number): Promise<any> => {
-    const response = await axios.post(`http://localhost:8080/api/users/wallet/admin/withdraw-requests/${id}/approve`, {}, { headers: getCustomerHeaders() });
+    const token = localStorage.getItem('auth_token');
+    const response = await axios.post(`http://localhost:8080/api/users/wallet/admin/withdraw-requests/${id}/approve`, {},
+      { headers: { 'Authorization': `Bearer ${token}` } });
     return response.data;
   },
 
   rejectWithdrawalAdmin: async (id: number): Promise<any> => {
-    const response = await axios.post(`http://localhost:8080/api/users/wallet/admin/withdraw-requests/${id}/reject`, {}, { headers: getCustomerHeaders() });
+    const token = localStorage.getItem('auth_token');
+    const response = await axios.post(`http://localhost:8080/api/users/wallet/admin/withdraw-requests/${id}/reject`, {},
+      { headers: { 'Authorization': `Bearer ${token}` } });
+    return response.data;
+  },
+
+  // ================= ADMIN COMMISSION API =================
+
+  getCommissionStats: async (): Promise<any> => {
+    const token = localStorage.getItem('auth_token');
+    const response = await axios.get(`http://localhost:8080/api/users/wallet/admin/commission-stats`,
+      { headers: { 'Authorization': `Bearer ${token}` } });
+    return response.data;
+  },
+
+  getCommissionTransactions: async (): Promise<any> => {
+    const token = localStorage.getItem('auth_token');
+    const response = await axios.get(`http://localhost:8080/api/users/wallet/admin/commission-transactions`,
+      { headers: { 'Authorization': `Bearer ${token}` } });
+    return response.data;
+  },
+
+  // ================= CUSTOMER: Lịch sử Escrow của tôi =================
+
+  getMyEscrows: async (): Promise<any> => {
+    const response = await axios.get(`http://localhost:8080/api/escrows/my`, { headers: getCustomerHeaders() });
     return response.data;
   }
 };

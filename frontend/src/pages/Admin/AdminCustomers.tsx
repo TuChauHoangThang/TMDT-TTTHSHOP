@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { adminService } from '../../services/adminService';
 import type { AdminUser } from '../../services/adminService';
 import { toast } from 'react-toastify';
+import { usePagination } from '../../hooks/usePagination';
+import Pagination from '../../components/Pagination/Pagination';
 
 const fmtDate = (s?: string) =>
     s ? new Date(s).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
@@ -13,6 +15,7 @@ const AdminCustomers: React.FC = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const pagination = usePagination(filtered, 15);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
@@ -35,6 +38,7 @@ const AdminCustomers: React.FC = () => {
       );
     }
     setFiltered(result);
+    pagination.setPage(1);
   }, [search, statusFilter, customers]);
 
   const handleToggle = async (id: number) => {
@@ -245,6 +249,7 @@ const AdminCustomers: React.FC = () => {
                 Không tìm thấy khách hàng nào
               </div>
           ) : (
+              <>
               <div className="admin-table-wrap">
                 <table className="admin-table">
                   <thead>
@@ -259,7 +264,7 @@ const AdminCustomers: React.FC = () => {
                   </tr>
                   </thead>
                   <tbody>
-                  {filtered.map(user => (
+                  {pagination.paged.map(user => (
                       <tr key={user.id}>
                         <td><span className="id-cell">#{user.id}</span></td>
                         <td>
@@ -304,6 +309,8 @@ const AdminCustomers: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+              <Pagination {...pagination} onPageChange={pagination.setPage} />
+              </>
           )}
         </div>
       </div>

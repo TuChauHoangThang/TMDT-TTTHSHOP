@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { usePagination } from '../../hooks/usePagination';
+import Pagination from '../../components/Pagination/Pagination';
 
 const BASE = 'http://localhost:8080/api/admin';
 
@@ -52,6 +54,7 @@ const AdminProducts: React.FC = () => {
   const [newImageUrl, setNewImageUrl] = useState('');
   const [savingId, setSavingId] = useState<number | null>(null);
   const [bulkUrls, setBulkUrls] = useState('');
+  const pagination = usePagination(filtered, 20);
 
   // ── Load products ────────────────────────────────────────────
   const loadProducts = useCallback(async () => {
@@ -83,6 +86,7 @@ const AdminProducts: React.FC = () => {
       );
     }
     setFiltered(result);
+    pagination.setPage(1);
   }, [search, catFilter, products]);
 
   // ── Open image editor ────────────────────────────────────────
@@ -226,7 +230,8 @@ const AdminProducts: React.FC = () => {
             <i className="fa-solid fa-box-open" /> Không có sản phẩm nào
           </div>
         ) : (
-          <div className="admin-table-wrap">
+            <>
+            <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
@@ -241,7 +246,7 @@ const AdminProducts: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(p => (
+                {pagination.paged.map(p => (
                   <tr key={p.id}>
                     <td><span className="id-cell">#{p.id}</span></td>
                     <td>
@@ -286,6 +291,8 @@ const AdminProducts: React.FC = () => {
               </tbody>
             </table>
           </div>
+          <Pagination {...pagination} onPageChange={pagination.setPage} />
+            </>
         )}
       </div>
 
