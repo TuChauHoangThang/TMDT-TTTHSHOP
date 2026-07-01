@@ -181,6 +181,9 @@ const Login: React.FC = () => {
           <div className="auth-footer-text">
             Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
           </div>
+          <div className="auth-footer-text" style={{ marginTop: '0.75rem' }}>
+            Bạn muốn trở thành đối tác? <Link to="/register?role=contractor">Đăng ký tài khoản nhà thầu</Link>
+          </div>
         </div>
       </div>
     </div>
