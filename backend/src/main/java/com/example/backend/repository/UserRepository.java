@@ -11,5 +11,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
     List<User> findByRoleOrderByCreatedAtDesc(Role role);
     long countByRole(Role role);
+    long countByRoleAndCreatedAtBetween(Role role, java.time.LocalDateTime start, java.time.LocalDateTime end);
     List<User> findAllByOrderByCreatedAtDesc();
 }

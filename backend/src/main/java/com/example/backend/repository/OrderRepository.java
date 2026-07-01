@@ -15,9 +15,16 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     long countByStatus(String status);
 
+    long countByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
+
+    long countByStatusAndCreatedAtBetween(String status, java.time.LocalDateTime start, java.time.LocalDateTime end);
+
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.status = 'COMPLETED'")
     BigDecimal sumCompletedRevenue();
 
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o")
     BigDecimal sumTotalRevenue();
+
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.createdAt BETWEEN :start AND :end")
+    BigDecimal sumRevenueBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
 }

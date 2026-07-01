@@ -180,13 +180,31 @@ const Header: React.FC = () => {
             <div className="header-nav-right">
               <ul className="nav-menu">
                 <li className="nav-item">
-                  <Link
-                      to="/custom-orders"
-                      className="nav-link"
-                      style={{ color: 'var(--color-accent)', fontWeight: 700 }}
-                  >
-                    <i className="fa fa-pencil-ruler" style={{ marginRight: 4 }}></i>Đặt Theo Yêu Cầu
-                  </Link>
+                  {user && user.role === 'CONTRACTOR' ? (
+                    <Link
+                        to="/contractor/rfq"
+                        className="nav-link"
+                        style={{ color: 'var(--color-accent)', fontWeight: 700 }}
+                    >
+                      <i className="fa fa-pencil-ruler" style={{ marginRight: 4 }}></i>Yêu Cầu Báo Giá
+                    </Link>
+                  ) : user && user.role === 'ADMIN' ? (
+                    <Link
+                        to="/admin/custom-orders"
+                        className="nav-link"
+                        style={{ color: 'var(--color-accent)', fontWeight: 700 }}
+                    >
+                      <i className="fa fa-pencil-ruler" style={{ marginRight: 4 }}></i>Đơn Theo Yêu Cầu
+                    </Link>
+                  ) : (
+                    <Link
+                        to="/custom-orders"
+                        className="nav-link"
+                        style={{ color: 'var(--color-accent)', fontWeight: 700 }}
+                    >
+                      <i className="fa fa-pencil-ruler" style={{ marginRight: 4 }}></i>Đặt Theo Yêu Cầu
+                    </Link>
+                  )}
                 </li>
                 <li className="nav-item">
                   <Link to="/contact" className="nav-link">Liên Hệ</Link>
@@ -313,6 +331,7 @@ const Header: React.FC = () => {
                           </div>
 
                           {[
+                            { icon: 'fa-user-shield', label: 'Quản Trị Hệ Thống', to: '/admin/dashboard', roles: ['ADMIN'] },
                             { icon: 'fa-user', label: 'Tài Khoản Của Tôi', to: '/customer/dashboard', roles: ['CUSTOMER'] },
                             { icon: 'fa-store', label: 'Kênh Nhà Thầu', to: '/contractor/dashboard', roles: ['CONTRACTOR'] },
                             { icon: 'fa-wallet', label: 'Ví Của Tôi', to: user.role === 'CONTRACTOR' ? '/contractor/wallet' : '/customer/wallet', roles: ['CUSTOMER', 'CONTRACTOR'] },
@@ -386,7 +405,13 @@ const Header: React.FC = () => {
                 </div>
             )}
 
-            <Link to="/custom-orders" className="mobile-nav-link" onClick={() => setMobileNavOpen(false)}>Đặt Theo Yêu Cầu</Link>
+            {user && user.role === 'CONTRACTOR' ? (
+              <Link to="/contractor/rfq" className="mobile-nav-link" onClick={() => setMobileNavOpen(false)}>Yêu Cầu Báo Giá</Link>
+            ) : user && user.role === 'ADMIN' ? (
+              <Link to="/admin/custom-orders" className="mobile-nav-link" onClick={() => setMobileNavOpen(false)}>Đơn Theo Yêu Cầu</Link>
+            ) : (
+              <Link to="/custom-orders" className="mobile-nav-link" onClick={() => setMobileNavOpen(false)}>Đặt Theo Yêu Cầu</Link>
+            )}
             <Link to="/contact" className="mobile-nav-link" onClick={() => setMobileNavOpen(false)}>Liên Hệ</Link>
 
             {isAuthenticated ? (

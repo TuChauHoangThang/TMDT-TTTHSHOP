@@ -97,8 +97,8 @@ export interface AdminCustomOrderDetail extends AdminCustomOrder {
 }
 
 export const adminService = {
-  getStats: (): Promise<AdminStats> =>
-    axios.get<AdminStats>(`${BASE}/stats`).then(r => r.data),
+  getStats: (startDate?: string, endDate?: string): Promise<AdminStats> =>
+    axios.get<AdminStats>(`${BASE}/stats`, { params: { startDate, endDate } }).then(r => r.data),
 
   getAllUsers: (): Promise<AdminUser[]> =>
     axios.get<AdminUser[]>(`${BASE}/users`).then(r => r.data),
