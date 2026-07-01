@@ -103,6 +103,9 @@ public class ProductDto {
         private List<String> badges;
         private String status;
         private LocalDateTime createdAt;
+        private Long shopId;
+        private String shopName;
+        private String shopSlug;
 
         public static ProductSummary from(Product p) {
             ProductSummary s = new ProductSummary();
@@ -122,6 +125,11 @@ public class ProductDto {
                     : Collections.emptyList();
             s.status = p.getStatus().name();
             s.createdAt = p.getCreatedAt();
+            if (p.getShop() != null) {
+                s.shopId = p.getShop().getId();
+                s.shopName = p.getShop().getName();
+                s.shopSlug = p.getShop().getSlug();
+            }
             return s;
         }
 
@@ -140,6 +148,9 @@ public class ProductDto {
         public List<String> getBadges() { return badges; }
         public String getStatus() { return status; }
         public LocalDateTime getCreatedAt() { return createdAt; }
+        public Long getShopId() { return shopId; }
+        public String getShopName() { return shopName; }
+        public String getShopSlug() { return shopSlug; }
     }
 
     /**
@@ -162,6 +173,9 @@ public class ProductDto {
         private String status;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
+        private Long shopId;
+        private String shopName;
+        private String shopSlug;
 
         public static ProductDetail from(Product p) {
             ProductDetail d = new ProductDetail();
@@ -185,6 +199,11 @@ public class ProductDto {
             d.status = p.getStatus().name();
             d.createdAt = p.getCreatedAt();
             d.updatedAt = p.getUpdatedAt();
+            if (p.getShop() != null) {
+                d.shopId = p.getShop().getId();
+                d.shopName = p.getShop().getName();
+                d.shopSlug = p.getShop().getSlug();
+            }
             return d;
         }
 
@@ -205,6 +224,9 @@ public class ProductDto {
         public String getStatus() { return status; }
         public LocalDateTime getCreatedAt() { return createdAt; }
         public LocalDateTime getUpdatedAt() { return updatedAt; }
+        public Long getShopId() { return shopId; }
+        public String getShopName() { return shopName; }
+        public String getShopSlug() { return shopSlug; }
     }
 
     /**
@@ -240,6 +262,8 @@ public class ProductDto {
         /** Danh sách badge: ["HOT", "MỚI", "-15%"] */
         private List<String> badges;
 
+        private Long shopId;
+
         // Getters & Setters
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }
@@ -263,6 +287,8 @@ public class ProductDto {
         public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
         public List<String> getBadges() { return badges; }
         public void setBadges(List<String> badges) { this.badges = badges; }
+        public Long getShopId() { return shopId; }
+        public void setShopId(Long shopId) { this.shopId = shopId; }
     }
 
     /**
@@ -284,6 +310,7 @@ public class ProductDto {
         private List<String> imageUrls;
         private List<String> badges;
         private String status; // "ACTIVE" hoặc "INACTIVE"
+        private Long shopId;
 
         // Getters & Setters
         public String getName() { return name; }
@@ -308,6 +335,8 @@ public class ProductDto {
         public void setBadges(List<String> badges) { this.badges = badges; }
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
+        public Long getShopId() { return shopId; }
+        public void setShopId(Long shopId) { this.shopId = shopId; }
     }
 
     // ==================== PAGED RESPONSE ====================

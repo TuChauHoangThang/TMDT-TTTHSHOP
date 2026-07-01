@@ -16,7 +16,9 @@ public class Product {
 
     public enum Status {
         ACTIVE,   // Đang bán
-        INACTIVE  // Tạm ẩn
+        INACTIVE, // Tạm ẩn
+        PENDING,  // Chờ duyệt
+        REJECTED  // Bị từ chối
     }
 
     @Id
@@ -38,6 +40,10 @@ public class Product {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shop_id")
+    private Shop shop;
 
     /**
      * Giá hiện tại (VNĐ). NULL nếu price_contact = true
@@ -114,6 +120,8 @@ public class Product {
     public void setDescription(String description) { this.description = description; }
     public Category getCategory() { return category; }
     public void setCategory(Category category) { this.category = category; }
+    public Shop getShop() { return shop; }
+    public void setShop(Shop shop) { this.shop = shop; }
     public BigDecimal getPriceCurrent() { return priceCurrent; }
     public void setPriceCurrent(BigDecimal priceCurrent) { this.priceCurrent = priceCurrent; }
     public BigDecimal getPriceOriginal() { return priceOriginal; }

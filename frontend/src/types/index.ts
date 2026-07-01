@@ -13,6 +13,9 @@ export interface Product {
   ratingStars: number;
   badges: string[];
   status?: string;
+  shopId?: number;
+  shopName?: string;
+  shopSlug?: string;
 }
 
 export interface Category {

@@ -141,8 +141,16 @@ const ProductDetail: React.FC = () => {
 
           {/* ---- Right: Info & Actions ---- */}
           <div className="pd-info">
-            <div className="pd-category">
-              {product.categoryName || (typeof product.category === 'object' ? (product.category as any).name : product.category)}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+              <div className="pd-category" style={{ marginBottom: 0 }}>
+                {product.categoryName || (typeof product.category === 'object' ? (product.category as any).name : product.category)}
+              </div>
+              {product.shopName && (
+                <span className="pd-shop-badge" style={{ fontSize: '0.8rem', color: '#0d9488', background: '#f0fdfa', border: '1px solid #ccfbf1', padding: '2px 10px', borderRadius: '12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <i className="fa-solid fa-store" />
+                  Bán bởi: {product.shopName}
+                </span>
+              )}
             </div>
             <h1 className="pd-title">{product.name}</h1>
             
