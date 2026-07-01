@@ -78,9 +78,9 @@ function App() {
                 <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
 
                 <Route path="/about" element={<AboutPage />} />
-                <Route path="/custom-orders" element={<ProtectedRoute><CustomOrderList /></ProtectedRoute>} />
-                <Route path="/custom-orders/create" element={<ProtectedRoute><CreateCustomOrder /></ProtectedRoute>} />
-                <Route path="/custom-orders/:id" element={<ProtectedRoute><CustomOrderDetail /></ProtectedRoute>} />
+                <Route path="/custom-orders" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><CustomOrderList /></ProtectedRoute>} />
+                <Route path="/custom-orders/create" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><CreateCustomOrder /></ProtectedRoute>} />
+                <Route path="/custom-orders/:id" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><CustomOrderDetail /></ProtectedRoute>} />
                 <Route path="*" element={
                   <div className="container section" style={{ minHeight: '50vh', paddingTop: '6rem' }}>
                     <h3>🚧 Đang phát triển...</h3>

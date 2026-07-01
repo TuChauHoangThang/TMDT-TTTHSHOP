@@ -27,19 +27,72 @@ public class AdminController {
     // ─────────────────────────────────────────────────────────────
 
     @GetMapping("/stats")
-    public ResponseEntity<?> getDashboardStats() {
-        long totalUsers       = userRepository.countByRole(Role.CUSTOMER);
-        long totalContractors = userRepository.countByRole(Role.CONTRACTOR);
-        long totalOrders      = orderRepository.count();
-        long pendingOrders    = orderRepository.countByStatus("PENDING");
-        long completedOrders  = orderRepository.countByStatus("COMPLETED");
-        long cancelledOrders  = orderRepository.countByStatus("CANCELLED");
-        long totalCustomOrders = customOrderRequestRepository.count();
-        long openCustomOrders  = customOrderRequestRepository.countByStatus(CustomOrderRequest.Status.OPEN);
-        long inProgressCustomOrders = customOrderRequestRepository.countByStatus(CustomOrderRequest.Status.IN_PROGRESS);
-        long completedCustomOrders  = customOrderRequestRepository.countByStatus(CustomOrderRequest.Status.COMPLETED);
-        BigDecimal totalRevenue = orderRepository.sumTotalRevenue();
-        long totalProducts    = productRepository.count();
+    public ResponseEntity<?> getDashboardStats(
+            @RequestParam(value = "startDate", required = false) String startDateStr,
+            @RequestParam(value = "endDate", required = false) String endDateStr) {
+
+        java.time.LocalDateTime start = null;
+        java.time.LocalDateTime end = null;
+
+        if (startDateStr != null && !startDateStr.isBlank()) {
+            try {
+                java.time.LocalDate sDate = java.time.LocalDate.parse(startDateStr.trim());
+                start = sDate.atStartOfDay();
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+
+        if (endDateStr != null && !endDateStr.isBlank()) {
+            try {
+                java.time.LocalDate eDate = java.time.LocalDate.parse(endDateStr.trim());
+                end = eDate.atTime(23, 59, 59);
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+
+        long totalUsers;
+        long totalContractors;
+        long totalOrders;
+        long pendingOrders;
+        long completedOrders;
+        long cancelledOrders;
+        long totalCustomOrders;
+        long openCustomOrders;
+        long inProgressCustomOrders;
+        long completedCustomOrders;
+        BigDecimal totalRevenue;
+        long totalProducts = productRepository.count();
+
+        if (start != null || end != null) {
+            if (start == null) start = java.time.LocalDateTime.of(2000, 1, 1, 0, 0);
+            if (end == null) end = java.time.LocalDateTime.now();
+
+            totalUsers = userRepository.countByRoleAndCreatedAtBetween(Role.CUSTOMER, start, end);
+            totalContractors = userRepository.countByRoleAndCreatedAtBetween(Role.CONTRACTOR, start, end);
+            totalOrders = orderRepository.countByCreatedAtBetween(start, end);
+            pendingOrders = orderRepository.countByStatusAndCreatedAtBetween("PENDING", start, end);
+            completedOrders = orderRepository.countByStatusAndCreatedAtBetween("COMPLETED", start, end);
+            cancelledOrders = orderRepository.countByStatusAndCreatedAtBetween("CANCELLED", start, end);
+            totalCustomOrders = customOrderRequestRepository.countByCreatedAtBetween(start, end);
+            openCustomOrders = customOrderRequestRepository.countByStatusAndCreatedAtBetween(CustomOrderRequest.Status.OPEN, start, end);
+            inProgressCustomOrders = customOrderRequestRepository.countByStatusAndCreatedAtBetween(CustomOrderRequest.Status.IN_PROGRESS, start, end);
+            completedCustomOrders = customOrderRequestRepository.countByStatusAndCreatedAtBetween(CustomOrderRequest.Status.COMPLETED, start, end);
+            totalRevenue = orderRepository.sumRevenueBetween(start, end);
+        } else {
+            totalUsers = userRepository.countByRole(Role.CUSTOMER);
+            totalContractors = userRepository.countByRole(Role.CONTRACTOR);
+            totalOrders = orderRepository.count();
+            pendingOrders = orderRepository.countByStatus("PENDING");
+            completedOrders = orderRepository.countByStatus("COMPLETED");
+            cancelledOrders = orderRepository.countByStatus("CANCELLED");
+            totalCustomOrders = customOrderRequestRepository.count();
+            openCustomOrders = customOrderRequestRepository.countByStatus(CustomOrderRequest.Status.OPEN);
+            inProgressCustomOrders = customOrderRequestRepository.countByStatus(CustomOrderRequest.Status.IN_PROGRESS);
+            completedCustomOrders = customOrderRequestRepository.countByStatus(CustomOrderRequest.Status.COMPLETED);
+            totalRevenue = orderRepository.sumTotalRevenue();
+        }
 
         Map<String, Object> stats = new LinkedHashMap<>();
         stats.put("totalUsers", totalUsers);

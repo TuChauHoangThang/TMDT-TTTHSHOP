@@ -36,4 +36,8 @@ public interface CustomOrderRequestRepository extends JpaRepository<CustomOrderR
 
     /** Admin: Đếm theo status */
     long countByStatus(CustomOrderRequest.Status status);
+
+    long countByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
+
+    long countByStatusAndCreatedAtBetween(CustomOrderRequest.Status status, java.time.LocalDateTime start, java.time.LocalDateTime end);
 }

@@ -9,16 +9,63 @@ const fmt = (n: number) =>
 const AdminDashboard: React.FC = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [filtering, setFiltering] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    adminService.getStats()
+  const fetchStats = (start?: string, end?: string) => {
+    setFiltering(true);
+    adminService.getStats(start, end)
       .then(setStats)
       .catch(console.error)
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+        setFiltering(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchStats();
   }, []);
 
-  if (loading) {
+  const handleFilter = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchStats(startDate || undefined, endDate || undefined);
+  };
+
+  const handleQuickFilter = (type: 'today' | 'yesterday' | 'this_month' | 'all') => {
+    let start = '';
+    let end = '';
+    const today = new Date();
+    
+    if (type === 'today') {
+      const offset = 7 * 60;
+      const vnToday = new Date(today.getTime() + offset * 60 * 1000);
+      const yyyymmdd = vnToday.toISOString().split('T')[0];
+      start = yyyymmdd;
+      end = yyyymmdd;
+    } else if (type === 'yesterday') {
+      const offset = 7 * 60;
+      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000 + offset * 60 * 1000);
+      const yyyymmdd = yesterday.toISOString().split('T')[0];
+      start = yyyymmdd;
+      end = yyyymmdd;
+    } else if (type === 'this_month') {
+      const offset = 7 * 60;
+      const vnToday = new Date(today.getTime() + offset * 60 * 1000);
+      const yyyy = vnToday.getFullYear();
+      const mm = String(vnToday.getMonth() + 1).padStart(2, '0');
+      start = `${yyyy}-${mm}-01`;
+      end = vnToday.toISOString().split('T')[0];
+    }
+    
+    setStartDate(start);
+    setEndDate(end);
+    fetchStats(start || undefined, end || undefined);
+  };
+
+  if (loading && !stats) {
     return (
       <div className="admin-loading">
         <i className="fa-solid fa-spinner fa-spin" />
@@ -31,9 +78,32 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div>
-      <div className="admin-page-header">
-        <h1>Dashboard</h1>
-        <p>Tổng quan hoạt động của hệ thống TTTH Furniture</p>
+      <div className="admin-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
+        <div>
+          <h1 style={{ margin: 0 }}>Dashboard</h1>
+          <p style={{ margin: '4px 0 0 0' }}>Tổng quan hoạt động của hệ thống TTTH Furniture</p>
+        </div>
+
+        {/* Date Filter Form */}
+        <form onSubmit={handleFilter} className="admin-date-filter" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', background: '#fff', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid var(--color-border)', flexWrap: 'wrap', boxShadow: 'var(--shadow-sm)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)' }}>Từ:</label>
+            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ padding: '0.3rem 0.5rem', border: '1px solid var(--color-border)', borderRadius: '4px', fontSize: '0.85rem' }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)' }}>Đến:</label>
+            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} style={{ padding: '0.3rem 0.5rem', border: '1px solid var(--color-border)', borderRadius: '4px', fontSize: '0.85rem' }} />
+          </div>
+          <button type="submit" className="admin-btn admin-btn-primary admin-btn-sm" style={{ padding: '0.35rem 0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }} disabled={filtering}>
+            {filtering ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-filter" />} Lọc
+          </button>
+          
+          <div style={{ display: 'flex', gap: '0.35rem', borderLeft: '1px solid var(--color-border)', paddingLeft: '0.75rem' }}>
+            <button type="button" onClick={() => handleQuickFilter('today')} className="admin-btn admin-btn-ghost admin-btn-sm" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>Hôm nay</button>
+            <button type="button" onClick={() => handleQuickFilter('this_month')} className="admin-btn admin-btn-ghost admin-btn-sm" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>Tháng này</button>
+            <button type="button" onClick={() => handleQuickFilter('all')} className="admin-btn admin-btn-ghost admin-btn-sm" style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>Tất cả</button>
+          </div>
+        </form>
       </div>
 
       {/* ── Stat cards row 1 ── */}
