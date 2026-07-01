@@ -3,8 +3,15 @@ import { Link } from 'react-router-dom';
 import { customOrderService } from '../../services/customOrderService';
 import '../../css/CustomOrder.css';
 
-const fmtVND = (n: number) => n.toLocaleString('vi-VN') + 'đ';
-const fmtDate = (s: string) => new Date(s).toLocaleString('vi-VN');
+const fmtVND = (n: number) => {
+  if (n === undefined || n === null) return '0đ';
+  return n.toLocaleString('vi-VN') + 'đ';
+};
+const fmtDate = (s: string) => {
+  if (!s) return '—';
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleString('vi-VN');
+};
 
 interface EscrowRecord {
   id: number;
