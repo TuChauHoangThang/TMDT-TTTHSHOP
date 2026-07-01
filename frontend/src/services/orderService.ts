@@ -25,5 +25,26 @@ export const orderService = {
   getOrderById: async (id: number) => {
     const response = await axios.get(`${API_URL}/${id}`, { headers: getHeaders() });
     return response.data;
+  },
+
+  getSellerOrders: async (contractorId: number) => {
+    const response = await axios.get(`${API_URL}/seller`, {
+      headers: { 'X-Contractor-Id': String(contractorId) }
+    });
+    return response.data;
+  },
+
+  getSellerOrderDetail: async (id: number, contractorId: number) => {
+    const response = await axios.get(`${API_URL}/seller/${id}`, {
+      headers: { 'X-Contractor-Id': String(contractorId) }
+    });
+    return response.data;
+  },
+
+  updateSellerOrderStatus: async (id: number, contractorId: number, status: string) => {
+    const response = await axios.patch(`${API_URL}/seller/${id}/status`, { status }, {
+      headers: { 'X-Contractor-Id': String(contractorId) }
+    });
+    return response.data;
   }
 };

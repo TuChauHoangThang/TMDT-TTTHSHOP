@@ -28,6 +28,7 @@ import ContractorLayout from './pages/Contractor/ContractorLayout';
 import ContractorDashboard from './pages/Contractor/ContractorDashboard';
 import ContractorProfile from './pages/Contractor/ContractorProfile';
 import ContractorProducts from './pages/Contractor/ContractorProducts';
+import ContractorOrders from './pages/Contractor/ContractorOrders';
 import CustomerLayout from './pages/Customer/CustomerLayout';
 import CustomerDashboard from './pages/Customer/CustomerDashboard';
 import CustomerOrders from './pages/Customer/CustomerOrders';
@@ -95,6 +96,7 @@ function App() {
                 <Route path="dashboard" element={<ContractorDashboard />} />
                 <Route path="profile" element={<ContractorProfile />} />
                 <Route path="products" element={<ContractorProducts />} />
+                <Route path="orders" element={<ContractorOrders />} />
                 <Route path="rfq" element={<SellerRFQList />} />
                 <Route path="rfq/:id" element={<SellerRFQDetail />} />
                 <Route path="wallet" element={<Wallet />} />

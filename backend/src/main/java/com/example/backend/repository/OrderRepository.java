@@ -13,6 +13,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findAllByOrderByCreatedAtDesc();
 
+    @Query("SELECT DISTINCT o FROM Order o JOIN o.items i JOIN i.product p WHERE p.shop.id = :shopId ORDER BY o.createdAt DESC")
+    List<Order> findByShopIdOrderByCreatedAtDesc(@org.springframework.data.repository.query.Param("shopId") Long shopId);
+
     long countByStatus(String status);
 
     long countByCreatedAtBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);

@@ -5,6 +5,10 @@ import com.example.backend.dto.OrderRequestDTO;
 import com.example.backend.entity.Order;
 import com.example.backend.service.OrderService;
 import jakarta.servlet.http.HttpServletRequest;
+import com.example.backend.repository.ShopRepository;
+import com.example.backend.entity.Shop;
+import com.example.backend.entity.OrderItem;
+import java.math.BigDecimal;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +28,9 @@ public class OrderController {
 
     @Autowired
     private VNPayConfig vnpayConfig;
+
+    @Autowired
+    private ShopRepository shopRepository;
 
     @PostMapping
     public ResponseEntity<?> createOrder(
@@ -118,6 +125,108 @@ public class OrderController {
             return ResponseEntity.ok(orderService.getOrderById(id, customerId));
         } catch (Exception e) {
             return ResponseEntity.status(404).body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/seller")
+    public ResponseEntity<?> getSellerOrders(@RequestHeader("X-Contractor-Id") Long contractorId) {
+        try {
+            Shop shop = shopRepository.findByOwnerId(contractorId)
+                    .orElseThrow(() -> new RuntimeException("Tài khoản nhà thầu chưa cấu hình cửa hàng"));
+            
+            List<Order> orders = orderService.getOrdersBySeller(contractorId);
+            List<Map<String, Object>> result = new ArrayList<>();
+            
+            for (Order o : orders) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("id", o.getId());
+                m.put("customerId", o.getCustomerId());
+                m.put("fullName", o.getFullName());
+                m.put("phone", o.getPhone());
+                m.put("address", o.getAddress());
+                m.put("paymentMethod", o.getPaymentMethod());
+                m.put("status", o.getStatus());
+                m.put("createdAt", o.getCreatedAt());
+                m.put("note", o.getNote() != null ? o.getNote() : "");
+                
+                List<OrderItem> sellerItems = o.getItems().stream()
+                        .filter(item -> item.getProduct().getShop() != null && item.getProduct().getShop().getId().equals(shop.getId()))
+                        .toList();
+                
+                BigDecimal sellerTotal = sellerItems.stream()
+                        .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                
+                m.put("totalAmount", sellerTotal);
+                m.put("itemCount", sellerItems.size());
+                m.put("items", sellerItems);
+                
+                result.add(m);
+            }
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/seller/{id}")
+    public ResponseEntity<?> getSellerOrderDetail(
+            @PathVariable Long id,
+            @RequestHeader("X-Contractor-Id") Long contractorId) {
+        try {
+            Shop shop = shopRepository.findByOwnerId(contractorId)
+                    .orElseThrow(() -> new RuntimeException("Tài khoản nhà thầu chưa cấu hình cửa hàng"));
+            
+            Order o = orderService.getOrderByIdForSeller(id, shop.getId());
+            
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", o.getId());
+            m.put("customerId", o.getCustomerId());
+            m.put("fullName", o.getFullName());
+            m.put("phone", o.getPhone());
+            m.put("address", o.getAddress());
+            m.put("paymentMethod", o.getPaymentMethod());
+            m.put("status", o.getStatus());
+            m.put("createdAt", o.getCreatedAt());
+            m.put("note", o.getNote() != null ? o.getNote() : "");
+            
+            List<OrderItem> sellerItems = o.getItems().stream()
+                    .filter(item -> item.getProduct().getShop() != null && item.getProduct().getShop().getId().equals(shop.getId()))
+                    .toList();
+            
+            BigDecimal sellerTotal = sellerItems.stream()
+                    .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            m.put("totalAmount", sellerTotal);
+            m.put("items", sellerItems);
+            
+            return ResponseEntity.ok(m);
+        } catch (Exception e) {
+            return ResponseEntity.status(403).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/seller/{id}/status")
+    public ResponseEntity<?> updateSellerOrderStatus(
+            @PathVariable Long id,
+            @RequestHeader("X-Contractor-Id") Long contractorId,
+            @RequestBody Map<String, String> body) {
+        String newStatus = body.get("status");
+        if (newStatus == null || newStatus.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Thiếu trường status"));
+        }
+        try {
+            Shop shop = shopRepository.findByOwnerId(contractorId)
+                    .orElseThrow(() -> new RuntimeException("Tài khoản nhà thầu chưa cấu hình cửa hàng"));
+            
+            Order order = orderService.updateOrderStatusForSeller(id, shop.getId(), newStatus);
+            return ResponseEntity.ok(Map.of(
+                "message", "Cập nhật trạng thái đơn hàng thành công",
+                "status", order.getStatus()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }

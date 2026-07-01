@@ -10,6 +10,11 @@ import com.example.backend.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.backend.repository.ShopRepository;
+import com.example.backend.repository.UserRepository;
+import com.example.backend.service.WalletService;
+import com.example.backend.entity.Shop;
+import com.example.backend.entity.User;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,6 +31,15 @@ public class OrderService {
     
     @Autowired
     private NotificationService notificationService;
+
+    @Autowired
+    private ShopRepository shopRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private WalletService walletService;
 
     @Transactional
     public Order createOrder(String customerId, OrderRequestDTO requestDTO) {
@@ -105,7 +119,77 @@ public class OrderService {
     public Order updateOrderStatus(Long orderId, String status) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
-        order.setStatus(status);
+        
+        if ("COMPLETED".equalsIgnoreCase(status) && !"COMPLETED".equals(order.getStatus())) {
+            processOrderCompletion(order);
+        }
+        
+        order.setStatus(status.toUpperCase());
         return orderRepository.save(order);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Order> getOrdersBySeller(Long contractorId) {
+        Shop shop = shopRepository.findByOwnerId(contractorId)
+                .orElseThrow(() -> new RuntimeException("Tài khoản nhà thầu chưa cấu hình cửa hàng"));
+        return orderRepository.findByShopIdOrderByCreatedAtDesc(shop.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public Order getOrderByIdForSeller(Long id, Long shopId) {
+        Order order = orderRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng #" + id));
+            
+        boolean hasProductInShop = order.getItems().stream()
+                .anyMatch(item -> item.getProduct().getShop() != null && item.getProduct().getShop().getId().equals(shopId));
+                
+        if (!hasProductInShop) {
+            throw new RuntimeException("Bạn không có quyền xem đơn hàng này");
+        }
+        return order;
+    }
+
+    @Transactional
+    public Order updateOrderStatusForSeller(Long orderId, Long shopId, String status) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found with ID: " + orderId));
+                
+        boolean hasProductInShop = order.getItems().stream()
+                .anyMatch(item -> item.getProduct().getShop() != null && item.getProduct().getShop().getId().equals(shopId));
+                
+        if (!hasProductInShop) {
+            throw new RuntimeException("Bạn không có quyền cập nhật đơn hàng này");
+        }
+        
+        if ("COMPLETED".equalsIgnoreCase(status) && !"COMPLETED".equals(order.getStatus())) {
+            processOrderCompletion(order);
+        }
+        
+        order.setStatus(status.toUpperCase());
+        return orderRepository.save(order);
+    }
+
+    private void processOrderCompletion(Order order) {
+        for (OrderItem item : order.getItems()) {
+            Product product = item.getProduct();
+            if (product != null && product.getShop() != null) {
+                Shop shop = product.getShop();
+                User seller = shop.getOwner();
+                if (seller != null) {
+                    BigDecimal amount = item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
+                    
+                    BigDecimal balance = seller.getWalletBalance() != null ? seller.getWalletBalance() : BigDecimal.ZERO;
+                    seller.setWalletBalance(balance.add(amount));
+                    userRepository.save(seller);
+                    
+                    walletService.logTransaction(
+                        seller, 
+                        amount, 
+                        "ORDER_REVENUE", 
+                        "Nhận tiền bán sản phẩm '" + product.getName() + "' (SL: " + item.getQuantity() + ") từ đơn hàng #" + order.getId()
+                    );
+                }
+            }
+        }
     }
 }
