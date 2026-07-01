@@ -12,6 +12,7 @@ import HomePage from './pages/Home/HomePage';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import ForgotPassword from './pages/Auth/ForgotPassword';
+import RegisterContractor from './pages/Auth/RegisterContractor';
 import ProductList from './pages/Product/ProductList';
 import ProductDetail from './pages/Product/ProductDetail';
 import Cart from './pages/Product/Cart';
@@ -67,6 +68,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/register-contractor" element={<RegisterContractor />} />
 
                 <Route path="/products" element={<ProductList />} />
                 <Route path="/product/:slug" element={<ProductDetail />} />

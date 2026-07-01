@@ -3,6 +3,7 @@ package com.example.backend.controller;
 import com.example.backend.dto.auth.AuthResponse;
 import com.example.backend.dto.auth.LoginRequest;
 import com.example.backend.dto.auth.RegisterRequest;
+import com.example.backend.dto.auth.RegisterContractorRequest;
 import com.example.backend.entity.User;
 import com.example.backend.service.AuthService;
 import com.example.backend.entity.User;
@@ -82,6 +83,19 @@ public class AuthController {
                 "otpRequired", true,
                 "email", user.getEmail(),
                 "message", "Mã OTP đã được gửi đến email đăng ký của bạn. Vui lòng xác thực để kích hoạt tài khoản."
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/register-contractor")
+    public ResponseEntity<?> registerContractor(@RequestBody RegisterContractorRequest request) {
+        try {
+            User user = authService.registerContractor(request);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Đăng ký tài khoản nhà thầu thành công. Tài khoản của bạn hiện đang chờ quản trị viên xét duyệt."
             ));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
