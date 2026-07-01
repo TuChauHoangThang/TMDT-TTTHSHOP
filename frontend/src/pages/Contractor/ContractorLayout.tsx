@@ -109,6 +109,16 @@ const ContractorLayout: React.FC = () => {
             <span className="nav-text">Sản Phẩm Bán Sẵn</span>
           </NavLink>
 
+          <NavLink
+            to="/contractor/orders"
+            className={({ isActive }) =>
+              `contractor-nav-item${isActive ? ' active' : ''}`
+            }
+          >
+            <i className="fa-solid fa-receipt" />
+            <span className="nav-text">Đơn Hàng Bán Sẵn</span>
+          </NavLink>
+
           <div className="nav-section-title">Tài Khoản</div>
 
           <NavLink
