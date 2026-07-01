@@ -33,15 +33,18 @@ public class CustomOrderService {
     private final CustomOrderQuoteRepository quoteRepo;
     private final UserRepository userRepo; // Inject thêm UserRepository
     private final ShopRepository shopRepo; // Inject thêm ShopRepository
+    private final NotificationService notificationService;
 
     public CustomOrderService(CustomOrderRequestRepository requestRepo,
                               CustomOrderQuoteRepository quoteRepo,
                               UserRepository userRepo,
-                              ShopRepository shopRepo) {
+                              ShopRepository shopRepo,
+                              NotificationService notificationService) {
         this.requestRepo = requestRepo;
         this.quoteRepo = quoteRepo;
         this.userRepo = userRepo;
         this.shopRepo = shopRepo;
+        this.notificationService = notificationService;
         try {
             Files.createDirectories(Paths.get(UPLOAD_DIR));
         } catch (IOException e) {
@@ -207,12 +210,22 @@ public class CustomOrderService {
 
     public void cancelRequest(Long requestId, Long customerId) {
         CustomOrderRequest request = getRequestById(requestId, customerId);
-        if (request.getStatus() == CustomOrderRequest.Status.IN_PROGRESS ||
-                request.getStatus() == CustomOrderRequest.Status.COMPLETED) {
-            throw new RuntimeException("Không thể hủy yêu cầu ở trạng thái này");
+        if (request.getStatus() != CustomOrderRequest.Status.OPEN) {
+            throw new RuntimeException("Không thể hủy yêu cầu sau khi đã nhận báo giá hoặc đang thi công");
         }
         request.setStatus(CustomOrderRequest.Status.CANCELLED);
         requestRepo.save(request);
+
+        // Tạo thông báo hệ thống cho khách hàng
+        try {
+            notificationService.createNotification(
+                String.valueOf(customerId),
+                "Hủy đơn đặt theo yêu cầu",
+                "Yêu cầu đặt thiết kế #" + request.getId() + " - \"" + request.getTitle() + "\" của bạn đã được hủy thành công."
+            );
+        } catch (Exception e) {
+            System.err.println("Lỗi khi gửi thông báo hủy yêu cầu: " + e.getMessage());
+        }
     }
 
     // ==================== CONTRACTOR ====================

@@ -173,6 +173,18 @@ const CustomOrderDetail: React.FC = () => {
     }
   };
 
+  const handleCancelRequest = async () => {
+    if (!window.confirm('Bạn có chắc chắn muốn hủy yêu cầu đặt theo yêu cầu này? Hành động này không thể hoàn tác.')) return;
+    try {
+      await customOrderService.cancelRequest(Number(id));
+      const updated = await customOrderService.getRequestDetail(Number(id));
+      setOrder(updated as any);
+      showToast('Đã hủy yêu cầu thành công.', 'success');
+    } catch (error: any) {
+      showToast(error?.response?.data?.error || 'Hủy yêu cầu thất bại.', 'error');
+    }
+  };
+
   if (loading) return <div className="co-page"><div className="co-loading"><div className="co-spinner"></div></div></div>;
   if (!order) return <div className="co-page"><div className="co-container"><p>Không tìm thấy yêu cầu.</p></div></div>;
 
@@ -189,18 +201,45 @@ const CustomOrderDetail: React.FC = () => {
               <i className="fa fa-chevron-right" style={{ fontSize: '0.6rem' }}></i>
               <span>Chi tiết #{order.id}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
-              <h1 className="co-page-title" style={{ fontSize: '1.5rem', margin: 0 }}>{order.title}</h1>
-              <span className={`co-status co-status--${order.status.toLowerCase()}`}>
-                {order.status === 'OPEN' && 'Chờ báo giá'}
-                {order.status === 'QUOTED' && 'Đã có báo giá'}
-                {order.status === 'WAITING_FOR_PAYMENT' && 'Chờ đặt cọc'}
-                {order.status === 'IN_PROGRESS' && 'Đang chế tác'}
-                {order.status === 'COMPLETED_BY_CONTRACTOR' && 'Đã bàn giao'}
-                {order.status === 'COMPLETED' && 'Hoàn thành'}
-                {order.status === 'DISPUTED' && 'Tranh chấp/Khiếu nại'}
-                {order.status === 'CANCELLED' && 'Đã hủy/Hoàn tiền'}
-              </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <h1 className="co-page-title" style={{ fontSize: '1.5rem', margin: 0 }}>{order.title}</h1>
+                <span className={`co-status co-status--${order.status.toLowerCase()}`}>
+                  {order.status === 'OPEN' && 'Chờ báo giá'}
+                  {order.status === 'QUOTED' && 'Đã có báo giá'}
+                  {order.status === 'WAITING_FOR_PAYMENT' && 'Chờ đặt cọc'}
+                  {order.status === 'IN_PROGRESS' && 'Đang chế tác'}
+                  {order.status === 'COMPLETED_BY_CONTRACTOR' && 'Đã bàn giao'}
+                  {order.status === 'COMPLETED' && 'Hoàn thành'}
+                  {order.status === 'DISPUTED' && 'Tranh chấp/Khiếu nại'}
+                  {order.status === 'CANCELLED' && 'Đã hủy/Hoàn tiền'}
+                </span>
+              </div>
+
+              {order.status === 'OPEN' && (
+                <button
+                  onClick={handleCancelRequest}
+                  className="btn btn--outline"
+                  style={{
+                    borderColor: '#dc2626',
+                    color: '#dc2626',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = '#fef2f2'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <i className="fa-solid fa-ban"></i> Hủy Yêu Cầu
+                </button>
+              )}
             </div>
           </div>
 
