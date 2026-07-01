@@ -25,7 +25,11 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (fullName: string, email: string, password: string, phone?: string) => Promise<void>;
+  register: (fullName: string, email: string, password: string, phone?: string) => Promise<any>;
+  verifyOtp: (email: string, otpCode: string) => Promise<void>;
+  resendOtp: (email: string) => Promise<void>;
+  sendForgotPasswordOtp: (email: string) => Promise<void>;
+  resetPassword: (email: string, otpCode: string, newPassword: string) => Promise<void>;
   logout: () => void;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
@@ -111,11 +115,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await axios.post(`${API_BASE_URL}/register`, {
         fullName, email, password, phone
       });
+      return response.data;
+    } catch (error: any) {
+      const msg = error.response?.data || 'Đăng ký thất bại';
+      throw new Error(typeof msg === 'string' ? msg : 'Lỗi đăng ký');
+    }
+  }, []);
+
+  // ---- Verify OTP ----
+  const verifyOtp = useCallback(async (email: string, otpCode: string) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/verify-otp`, {
+        email, otpCode
+      });
 
       let userData: User;
       let userToken: string;
 
-      // Áp dụng logic tương tự Login
       if (response.data.user) {
         userData = response.data.user;
         userToken = response.data.token;
@@ -127,8 +143,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       persist(userData, userToken);
     } catch (error: any) {
-      const msg = error.response?.data || 'Đăng ký thất bại';
-      throw new Error(typeof msg === 'string' ? msg : 'Lỗi đăng ký');
+      const msg = error.response?.data || 'Xác thực OTP thất bại';
+      throw new Error(typeof msg === 'string' ? msg : 'Lỗi xác thực OTP');
+    }
+  }, []);
+
+  // ---- Resend OTP ----
+  const resendOtp = useCallback(async (email: string) => {
+    try {
+      await axios.post(`${API_BASE_URL}/resend-otp`, { email });
+    } catch (error: any) {
+      const msg = error.response?.data || 'Gửi lại OTP thất bại';
+      throw new Error(typeof msg === 'string' ? msg : 'Lỗi gửi lại OTP');
+    }
+  }, []);
+
+  // ---- Send Forgot Password OTP ----
+  const sendForgotPasswordOtp = useCallback(async (email: string) => {
+    try {
+      await axios.post(`${API_BASE_URL}/forgot-password`, { email });
+    } catch (error: any) {
+      const msg = error.response?.data || 'Yêu cầu OTP khôi phục mật khẩu thất bại';
+      throw new Error(typeof msg === 'string' ? msg : 'Lỗi gửi yêu cầu khôi phục');
+    }
+  }, []);
+
+  // ---- Reset Password ----
+  const resetPassword = useCallback(async (email: string, otpCode: string, newPassword: string) => {
+    try {
+      await axios.post(`${API_BASE_URL}/reset-password`, { email, otpCode, newPassword });
+    } catch (error: any) {
+      const msg = error.response?.data || 'Đặt lại mật khẩu thất bại';
+      throw new Error(typeof msg === 'string' ? msg : 'Lỗi đặt lại mật khẩu');
     }
   }, []);
 
@@ -150,6 +196,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         register,
+        verifyOtp,
+        resendOtp,
+        sendForgotPasswordOtp,
+        resetPassword,
         logout,
         setUser
       }}>
