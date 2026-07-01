@@ -155,6 +155,25 @@ public class EscrowController {
         }
     }
 
+    // ================= CUSTOMER: Lịch sử escrow của tôi =================
+
+    @GetMapping("/my")
+    public ResponseEntity<?> getMyEscrows(
+            @RequestHeader(value = "X-Customer-Id", required = false) Long customerId,
+            @RequestHeader(value = "X-Contractor-Id", required = false) Long contractorId) {
+        try {
+            if (customerId != null) {
+                return ResponseEntity.ok(escrowService.getEscrowsByCustomer(customerId));
+            }
+            if (contractorId != null) {
+                return ResponseEntity.ok(escrowService.getEscrowsByContractor(contractorId));
+            }
+            return ResponseEntity.badRequest().body(Map.of("error", "Thiếu thông tin người dùng"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // ================= ADMIN ENDPOINTS =================
 
     @GetMapping("/admin/all")
@@ -171,9 +190,19 @@ public class EscrowController {
             @PathVariable Long escrowId,
             @RequestBody Map<String, String> body) {
         try {
-            String resolution = body.get("resolution"); // RELEASE or REFUND
-            String notes = body.getOrDefault("notes", "Admin xử lý tranh chấp");
+            String resolution = body.get("resolution");
+            String notes = body.getOrDefault("notes", "Admin xử lý");
             Escrow escrow = escrowService.resolveDispute(escrowId, resolution, notes);
+            return ResponseEntity.ok(escrow);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/admin/{escrowId}/release")
+    public ResponseEntity<?> adminRelease(@PathVariable Long escrowId) {
+        try {
+            Escrow escrow = escrowService.adminRelease(escrowId);
             return ResponseEntity.ok(escrow);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { adminService } from '../../services/adminService';
 import type { AdminOrder, AdminOrderDetail } from '../../services/adminService';
 import { toast } from 'react-toastify';
+import { usePagination } from '../../hooks/usePagination';
+import Pagination from '../../components/Pagination/Pagination';
 
 const ORDER_STATUSES = ['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED'];
 
@@ -40,6 +42,9 @@ const AdminOrders: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<AdminOrderDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+
+  // Phân trang
+  const pagination = usePagination(filtered, 15);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
@@ -61,6 +66,7 @@ const AdminOrders: React.FC = () => {
       );
     }
     setFiltered(result);
+    pagination.setPage(1);
   }, [search, statusFilter, orders]);
 
   const openDetail = async (id: number) => {
@@ -279,6 +285,7 @@ const AdminOrders: React.FC = () => {
                 Không có đơn hàng nào
               </div>
           ) : (
+              <>
               <div className="admin-table-wrap">
                 <table className="admin-table">
                   <thead>
@@ -294,7 +301,7 @@ const AdminOrders: React.FC = () => {
                   </tr>
                   </thead>
                   <tbody>
-                  {filtered.map(order => (
+                  {pagination.paged.map(order => (
                       <tr key={order.id}>
                         <td><span className="id-cell">#{order.id}</span></td>
                         <td>
@@ -341,6 +348,8 @@ const AdminOrders: React.FC = () => {
                   </tbody>
                 </table>
               </div>
+              <Pagination {...pagination} onPageChange={pagination.setPage} />
+              </>
           )}
         </div>
         

@@ -330,25 +330,45 @@ const Header: React.FC = () => {
                             <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{user.email}</div>
                           </div>
 
+                          {/* Admin: nút nổi bật vào Dashboard */}
+                          {(user.role as string) === 'ADMIN' && (
+                            <Link
+                              to="/admin/dashboard"
+                              onClick={() => setUserMenuOpen(false)}
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '0.65rem',
+                                padding: '0.75rem 1rem', fontSize: '0.85rem', textDecoration: 'none',
+                                background: 'linear-gradient(135deg, #1e2a3a, #2563eb)',
+                                color: '#fff', fontWeight: 700, margin: '0.5rem 0.75rem',
+                                borderRadius: '8px', letterSpacing: '0.3px'
+                              }}
+                            >
+                              <i className="fa fa-shield-halved" style={{ width: 18 }}></i>
+                              Bảng Quản Trị Admin
+                              <i className="fa fa-arrow-right" style={{ marginLeft: 'auto', fontSize: '0.75rem' }}></i>
+                            </Link>
+                          )}
+
                           {[
                             { icon: 'fa-user-shield', label: 'Quản Trị Hệ Thống', to: '/admin/dashboard', roles: ['ADMIN'] },
                             { icon: 'fa-user', label: 'Tài Khoản Của Tôi', to: '/customer/dashboard', roles: ['CUSTOMER'] },
                             { icon: 'fa-store', label: 'Kênh Nhà Thầu', to: '/contractor/dashboard', roles: ['CONTRACTOR'] },
-                            { icon: 'fa-wallet', label: 'Ví Của Tôi', to: user.role === 'CONTRACTOR' ? '/contractor/wallet' : '/customer/wallet', roles: ['CUSTOMER', 'CONTRACTOR'] },
-                            { icon: 'fa-heart', label: 'Danh sách yêu thích', to: '/wishlist', roles: ['CUSTOMER', 'CONTRACTOR', 'ADMIN'] }
+                            { icon: 'fa-wallet', label: 'Ví Của Tôi', to: '/customer/wallet', roles: ['CUSTOMER'] },
+                            { icon: 'fa-wallet', label: 'Ví Của Tôi', to: '/contractor/wallet', roles: ['CONTRACTOR'] },
+                            { icon: 'fa-heart', label: 'Danh sách yêu thích', to: '/wishlist', roles: ['CUSTOMER', 'CONTRACTOR'] }
                           ]
                           .filter(item => item.roles.includes(user.role as string))
                           .map(item => (
-                              <Link
-                                  key={item.to}
-                                  to={item.to}
-                                  onClick={() => setUserMenuOpen(false)}
-                                  className="dropdown-link-item"
-                                  style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', padding: '0.65rem 1rem', fontSize: '0.85rem', color: 'var(--color-text)', textDecoration: 'none' }}
-                              >
-                                <i className={`fa ${item.icon}`} style={{ width: 18, color: 'var(--color-primary)' }}></i>
-                                {item.label}
-                              </Link>
+                            <Link
+                              key={item.to + item.label}
+                              to={item.to}
+                              onClick={() => setUserMenuOpen(false)}
+                              className="dropdown-link-item"
+                              style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', padding: '0.65rem 1rem', fontSize: '0.85rem', color: 'var(--color-text)', textDecoration: 'none' }}
+                            >
+                              <i className={`fa ${item.icon}`} style={{ width: 18, color: 'var(--color-primary)' }}></i>
+                              {item.label}
+                            </Link>
                           ))}
 
                           <div style={{ borderTop: '1px solid var(--color-border-light)' }}>

@@ -4,6 +4,7 @@ import com.example.backend.config.VNPayConfig;
 import com.example.backend.entity.User;
 import com.example.backend.entity.WithdrawalRequest;
 import com.example.backend.repository.UserRepository;
+import com.example.backend.service.EscrowService;
 import com.example.backend.service.WalletService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -26,6 +28,9 @@ public class WalletController {
 
     @Autowired
     private WalletService walletService;
+
+    @Autowired
+    private EscrowService escrowService;
 
     @Autowired
     private VNPayConfig vnpayConfig;
@@ -238,6 +243,32 @@ public class WalletController {
         try {
             WithdrawalRequest req = walletService.rejectWithdrawal(id);
             return ResponseEntity.ok(req);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ================= ADMIN COMMISSION ENDPOINTS =================
+
+    @GetMapping("/admin/commission-stats")
+    public ResponseEntity<?> getCommissionStats() {
+        try {
+            return ResponseEntity.ok(escrowService.getCommissionStats());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/admin/commission-transactions")
+    public ResponseEntity<?> getCommissionTransactions() {
+        try {
+            // Lấy lịch sử giao dịch hoa hồng của admin
+            User admin = userRepository.findByEmail("admin@test.com").orElse(null);
+            if (admin == null) return ResponseEntity.ok(List.of());
+            return ResponseEntity.ok(walletService.getTransactionHistory(admin.getId())
+                    .stream()
+                    .filter(tx -> "COMMISSION".equals(tx.getType()))
+                    .toList());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

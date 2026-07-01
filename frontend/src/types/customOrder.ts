@@ -3,16 +3,17 @@
 // ============================================================
 
 export type CustomOrderStatus =
-    | 'OPEN'                    // Đang chờ báo giá từ nhà thầu
-    | 'QUOTED'                  // Đã nhận ít nhất 1 báo giá
-    | 'WAITING_FOR_PAYMENT'     // Chờ thanh toán tạm giữ
-    | 'IN_PROGRESS'             // Tiền đã tạm giữ, đang thực hiện
-    | 'COMPLETED_BY_CONTRACTOR' // Nhà thầu đã bàn giao, chờ khách xác nhận
-    | 'COMPLETED'               // Đã giải ngân, hoàn thành
-    | 'DISPUTED'                // Đang tranh chấp khiếu nại
-    | 'CANCELLED';              // Đã hủy
+    | 'OPEN'
+    | 'QUOTED'
+    | 'WAITING_FOR_PAYMENT'
+    | 'IN_PROGRESS'
+    | 'COMPLETED_BY_CONTRACTOR'
+    | 'COMPLETED_BY_CUSTOMER'
+    | 'COMPLETED'
+    | 'DISPUTED'
+    | 'CANCELLED';
 
-export type EscrowStatus = 'PENDING' | 'HELD' | 'RELEASED' | 'REFUNDED' | 'DISPUTED';
+export type EscrowStatus = 'PENDING' | 'HELD' | 'AWAITING_RELEASE' | 'RELEASED' | 'REFUNDED' | 'DISPUTED';
 
 export interface EscrowInfo {
   id: number;

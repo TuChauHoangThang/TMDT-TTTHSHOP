@@ -535,4 +535,64 @@ public class AdminController {
             return ResponseEntity.ok(Map.of("message", "Đã set ảnh đại diện", "imageId", imageId));
         }).orElse(ResponseEntity.notFound().build());
     }
+
+    /** Lấy danh sách sản phẩm chờ duyệt */
+    @GetMapping("/products/pending")
+    public ResponseEntity<?> getPendingProducts() {
+        List<Product> products = productRepository.findByStatusOrderByCreatedAtDesc(Product.Status.PENDING);
+        List<Map<String, Object>> result = products.stream().map(p -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("id", p.getId());
+            m.put("name", p.getName());
+            m.put("slug", p.getSlug());
+            m.put("categoryName", p.getCategory() != null ? p.getCategory().getName() : "");
+            m.put("priceCurrent", p.getPriceCurrent());
+            m.put("priceOriginal", p.getPriceOriginal());
+            m.put("priceContact", p.getPriceContact());
+            m.put("status", p.getStatus().name());
+            m.put("ratingStars", p.getRatingStars());
+            m.put("ratingCount", p.getRatingCount());
+            m.put("shopName", p.getShop() != null ? p.getShop().getName() : "Hệ thống");
+            m.put("description", p.getDescription());
+            
+            List<ProductImage> imgs = productImageRepository.findByProductIdOrderBySortOrderAsc(p.getId());
+            String primaryImg = imgs.stream()
+                .filter(ProductImage::isPrimary)
+                .map(ProductImage::getImageUrl)
+                .findFirst()
+                .orElse(imgs.isEmpty() ? "" : imgs.get(0).getImageUrl());
+            m.put("primaryImage", primaryImg);
+            m.put("imageCount", imgs.size());
+            return m;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+    /** Duyệt sản phẩm */
+    @PatchMapping("/products/{id}/approve")
+    public ResponseEntity<?> approveProduct(@PathVariable Long id) {
+        return productRepository.findById(id).map(p -> {
+            p.setStatus(Product.Status.ACTIVE);
+            productRepository.save(p);
+            return ResponseEntity.ok(Map.of(
+                "message", "Đã duyệt sản phẩm thành công",
+                "id", p.getId(),
+                "status", p.getStatus().name()
+            ));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Từ chối sản phẩm */
+    @PatchMapping("/products/{id}/reject")
+    public ResponseEntity<?> rejectProduct(@PathVariable Long id) {
+        return productRepository.findById(id).map(p -> {
+            p.setStatus(Product.Status.REJECTED);
+            productRepository.save(p);
+            return ResponseEntity.ok(Map.of(
+                "message", "Đã từ chối duyệt sản phẩm",
+                "id", p.getId(),
+                "status", p.getStatus().name()
+            ));
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }

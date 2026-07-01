@@ -30,7 +30,7 @@ const AdminLayout: React.FC = () => {
         <div className="admin-sidebar-header">
           {isSidebarOpen ? (
             <>
-              <div className="admin-logo" onClick={() => navigate('/')}>
+              <div className="admin-logo" onClick={() => navigate('/admin/dashboard')}>
                 <div className="admin-logo-mark">
                   <i className="fa-solid fa-shield-halved" />
                 </div>
@@ -50,7 +50,7 @@ const AdminLayout: React.FC = () => {
           ) : (
             <div
               className="admin-logo-mark"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/admin/dashboard')}
               style={{ margin: '0 auto', cursor: 'pointer' }}
             >
               <i className="fa-solid fa-shield-halved" />
@@ -130,6 +130,14 @@ const AdminLayout: React.FC = () => {
           </NavLink>
 
           <NavLink
+            to="/admin/products/pending"
+            className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+          >
+            <i className="fa-solid fa-square-check" />
+            <span className="nav-text">Duyệt Sản Phẩm</span>
+          </NavLink>
+
+          <NavLink
             to="/admin/escrow"
             className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
           >
@@ -166,9 +174,13 @@ const AdminLayout: React.FC = () => {
             <h2 className="topbar-title">Bảng Quản Trị</h2>
           </div>
           <div className="topbar-right">
-            <button className="back-home-btn" onClick={() => navigate('/')}>
+            <button className="back-home-btn" onClick={() => navigate('/admin/dashboard')}>
+              <i className="fa-solid fa-gauge-high" />
+              Dashboard
+            </button>
+            <button className="back-home-btn" style={{ background: '#475569', marginLeft: 8 }} onClick={() => navigate('/')}>
               <i className="fa-solid fa-store" />
-              Về Trang Chủ
+              Xem Website
             </button>
           </div>
         </header>

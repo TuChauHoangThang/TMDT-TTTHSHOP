@@ -1,39 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { customOrderService } from '../../services/customOrderService';
+import { usePagination } from '../../hooks/usePagination';
+import Pagination from '../../components/Pagination/Pagination';
 import '../../css/CustomOrder.css';
 
-const fmtVND = (n: number) => {
-  if (n === undefined || n === null) return '0đ';
-  return n.toLocaleString('vi-VN') + 'đ';
-};
-const fmtDate = (s: string) => {
-  if (!s) return '—';
-  const d = new Date(s);
-  return isNaN(d.getTime()) ? '—' : d.toLocaleString('vi-VN');
-};
+const fmtVND = (n: number) => (n ?? 0).toLocaleString('vi-VN') + 'đ';
+const fmtDate = (s: string) => s ? new Date(s).toLocaleString('vi-VN') : '—';
+
+type Tab = 'escrow' | 'withdraw' | 'commission';
 
 interface EscrowRecord {
   id: number;
-  request: {
-    id: number;
-    title: string;
-    description: string;
-  };
-  customer: {
-    id: number;
-    fullName: string;
-  };
-  contractor: {
-    id: number;
-    fullName: string;
-  };
+  request: { id: number; title: string; description: string };
+  customer: { id: number; fullName: string };
+  contractor: { id: number; fullName: string };
   amount: number;
-  status: 'PENDING' | 'HELD' | 'RELEASED' | 'REFUNDED' | 'DISPUTED';
+  commissionAmount: number;
+  netAmount: number;
+  commissionRate: number;
+  status: 'PENDING' | 'HELD' | 'AWAITING_RELEASE' | 'RELEASED' | 'REFUNDED' | 'DISPUTED';
   paymentMethod: string;
   disputeReason?: string;
   disputeResolution?: string;
   createdAt: string;
+  releasedAt?: string;
+  refundedAt?: string;
 }
 
 interface WithdrawReq {
@@ -43,452 +34,436 @@ interface WithdrawReq {
   accountNumber: string;
   accountHolderName: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
-  user: {
-    id: number;
-    fullName: string;
-    email: string;
-    role: string;
-  };
+  user: { id: number; fullName: string; email: string; role: string };
   createdAt: string;
   processedAt?: string;
 }
 
+interface CommissionStats {
+  totalCommissionEarned: number;
+  totalReleasedEscrows: number;
+  commissionRate: number;
+  adminWalletBalance: number;
+  recentCommissions: Array<{
+    escrowId: number; requestId: number; requestTitle: string;
+    amount: number; commissionAmount: number; netAmount: number;
+    contractorName: string; customerName: string; releasedAt: string;
+  }>;
+}
+
+const statusLabel: Record<string, string> = {
+  PENDING: '⏳ Chờ thanh toán', HELD: '🔒 Đang tạm giữ',
+  AWAITING_RELEASE: '✅ Chờ admin giải ngân',
+  RELEASED: '💰 Đã giải ngân', REFUNDED: '↩️ Đã hoàn tiền', DISPUTED: '⚠️ Tranh chấp'
+};
+const statusColor: Record<string, {bg: string; color: string}> = {
+  PENDING: {bg:'#fef3c7', color:'#b45309'}, HELD: {bg:'#dbeafe', color:'#1e40af'},
+  AWAITING_RELEASE: {bg:'#dcfce7', color:'#166534'},
+  RELEASED: {bg:'#f0fdf4', color:'#15803d'}, REFUNDED: {bg:'#f3e8ff', color:'#7e22ce'},
+  DISPUTED: {bg:'#fee2e2', color:'#991b1b'}
+};
+
 const AdminEscrowDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'escrow' | 'withdraw'>('escrow');
+  const [activeTab, setActiveTab] = useState<Tab>('escrow');
   const [escrows, setEscrows] = useState<EscrowRecord[]>([]);
   const [withdraws, setWithdraws] = useState<WithdrawReq[]>([]);
-  
+  const [commission, setCommission] = useState<CommissionStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'ALL' | 'HELD' | 'DISPUTED' | 'RELEASED' | 'REFUNDED'>('ALL');
-  const [withdrawFilter, setWithdrawFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>('ALL');
-  
+  const [filter, setFilter] = useState<string>('ALL');
+  const [withdrawFilter, setWithdrawFilter] = useState<string>('ALL');
   const [resolvingId, setResolvingId] = useState<number | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
   const [processingWithdrawId, setProcessingWithdrawId] = useState<number | null>(null);
+  const [releasingId, setReleasingId] = useState<number | null>(null);
+  const [toast, setToast] = useState<{msg: string; type: 'success'|'error'}|null>(null);
 
-  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
-
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3500);
+  const showToast = (msg: string, type: 'success'|'error' = 'success') => {
+    setToast({msg, type}); setTimeout(() => setToast(null), 4000);
   };
 
-  const loadAllData = async () => {
+  const loadAll = async () => {
     setLoading(true);
     try {
-      const escrowData = await customOrderService.getAllEscrows();
-      setEscrows(escrowData);
-
-      const withdrawData = await customOrderService.getAllWithdrawRequestsAdmin();
-      setWithdraws(withdrawData);
-    } catch (error) {
-      console.error('Lỗi khi tải dữ liệu admin:', error);
-    } finally {
-      setLoading(false);
+      const [e, w, c] = await Promise.all([
+        customOrderService.getAllEscrows(),
+        customOrderService.getAllWithdrawRequestsAdmin(),
+        customOrderService.getCommissionStats(),
+      ]);
+      setEscrows(e); setWithdraws(w); setCommission(c);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const msg = err?.response?.data?.error || err?.message || 'Unknown error';
+      console.error('AdminEscrow load error:', status, msg);
     }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    loadAllData();
-  }, []);
+  useEffect(() => { loadAll(); }, []);
+
+  const handleAdminRelease = async (escrowId: number, netAmt: number, commission: number) => {
+    if (!window.confirm(`Xác nhận giải ngân:\n• Nhà thầu nhận: ${fmtVND(netAmt)}\n• Hoa hồng platform (5%): ${fmtVND(commission)}\n\nHành động này không thể hoàn tác!`)) return;
+    setReleasingId(escrowId);
+    try {
+      await customOrderService.adminReleaseEscrow(escrowId);
+      showToast(`Đã giải ngân ${fmtVND(netAmt)} cho nhà thầu. Hoa hồng ${fmtVND(commission)} đã vào ví platform.`);
+      loadAll();
+    } catch (err: any) { showToast(err?.response?.data?.error || 'Giải ngân thất bại', 'error'); }
+    finally { setReleasingId(null); }
+  };
 
   const handleResolve = async (escrowId: number, resolution: 'RELEASE' | 'REFUND') => {
-    if (!adminNotes.trim()) {
-      alert('Vui lòng nhập lý do phân xử / ghi chú trước khi đưa ra quyết định.');
-      return;
-    }
-
-    const actionText = resolution === 'RELEASE' ? 'GIẢI NGÂN cho Nhà thầu' : 'HOÀN TIỀN cho Khách hàng';
-    if (!window.confirm(`Xác nhận phân xử: ${actionText} cho giao dịch tạm giữ này?`)) return;
-
+    if (!adminNotes.trim()) { alert('Vui lòng nhập ghi chú phân xử'); return; }
+    const label = resolution === 'RELEASE' ? 'GIẢI NGÂN cho Nhà thầu (trừ 5% hoa hồng)' : 'HOÀN TIỀN đầy đủ cho Khách hàng';
+    if (!window.confirm(`Xác nhận: ${label}?`)) return;
     setResolvingId(escrowId);
     try {
       await customOrderService.resolveDispute(escrowId, resolution, adminNotes);
-      showToast('Đã xử lý tranh chấp thành công!');
-      setAdminNotes('');
-      loadAllData();
-    } catch (error: any) {
-      showToast(error?.response?.data?.error || 'Xử lý tranh chấp thất bại.', 'error');
-    } finally {
-      setResolvingId(null);
-    }
+      showToast(resolution === 'RELEASE' ? 'Đã giải ngân thành công (trừ 5% hoa hồng)!' : 'Đã hoàn tiền đầy đủ cho khách hàng!');
+      setAdminNotes(''); loadAll();
+    } catch (err: any) { showToast(err?.response?.data?.error || 'Xử lý thất bại', 'error'); }
+    finally { setResolvingId(null); }
   };
 
-  const handleApproveWithdraw = async (reqId: number) => {
-    if (!window.confirm('Xác nhận đã chuyển khoản ngân hàng ngoài đời thực và phê duyệt yêu cầu rút tiền này?')) return;
-    setProcessingWithdrawId(reqId);
+  const handleApproveWithdraw = async (id: number) => {
+    if (!window.confirm('Xác nhận đã chuyển khoản ngân hàng và phê duyệt?')) return;
+    setProcessingWithdrawId(id);
     try {
-      await customOrderService.approveWithdrawalAdmin(reqId);
-      showToast('Phê duyệt yêu cầu rút tiền thành công!');
-      loadAllData();
-    } catch (error: any) {
-      showToast(error?.response?.data?.error || 'Phê duyệt thất bại.', 'error');
-    } finally {
-      setProcessingWithdrawId(null);
-    }
+      await customOrderService.approveWithdrawalAdmin(id);
+      showToast('Phê duyệt thành công!'); loadAll();
+    } catch (err: any) { showToast(err?.response?.data?.error || 'Phê duyệt thất bại', 'error'); }
+    finally { setProcessingWithdrawId(null); }
   };
 
-  const handleRejectWithdraw = async (reqId: number) => {
-    if (!window.confirm('Xác nhận từ chối yêu cầu rút tiền này? Số tiền sẽ được hoàn trả lại ví của người dùng.')) return;
-    setProcessingWithdrawId(reqId);
+  const handleRejectWithdraw = async (id: number) => {
+    if (!window.confirm('Từ chối và hoàn tiền lại ví người dùng?')) return;
+    setProcessingWithdrawId(id);
     try {
-      await customOrderService.rejectWithdrawalAdmin(reqId);
-      showToast('Đã từ chối và hoàn tiền lại ví thành công!');
-      loadAllData();
-    } catch (error: any) {
-      showToast(error?.response?.data?.error || 'Từ chối thất bại.', 'error');
-    } finally {
-      setProcessingWithdrawId(null);
-    }
+      await customOrderService.rejectWithdrawalAdmin(id);
+      showToast('Đã từ chối và hoàn tiền lại ví!'); loadAll();
+    } catch (err: any) { showToast(err?.response?.data?.error || 'Thất bại', 'error'); }
+    finally { setProcessingWithdrawId(null); }
   };
 
-  if (loading) return <div className="co-page"><div className="co-loading"><div className="co-spinner"></div></div></div>;
+  const filteredEscrows = escrows.filter(e => filter === 'ALL' || e.status === filter);
+  const filteredWithdraws = withdraws.filter(w => withdrawFilter === 'ALL' || w.status === withdrawFilter);
 
-  const filteredEscrows = escrows.filter(e => {
-    if (filter === 'ALL') return true;
-    return e.status === filter;
-  });
-
-  const filteredWithdraws = withdraws.filter(w => {
-    if (withdrawFilter === 'ALL') return true;
-    return w.status === withdrawFilter;
-  });
+  if (loading) return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',minHeight:'60vh',gap:12,color:'#64748b'}}>
+      <i className="fa-solid fa-spinner fa-spin" style={{fontSize:'1.5rem'}}/> Đang tải dữ liệu...
+    </div>
+  );
 
   return (
-    <div className="co-page" style={{ paddingTop: '5.5rem', minHeight: '80vh' }}>
-      <div className="co-container--wide">
-        
-        <div className="co-breadcrumb" style={{ marginBottom: '1rem' }}>
-          <Link to="/">Trang chủ</Link>
-          <i className="fa fa-chevron-right" style={{ fontSize: '0.6rem', margin: '0 8px' }}></i>
-          <span>Ban quản trị</span>
-        </div>
-
-        {/* Dashboard Title & Tabs Toggle */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-          <h1 className="co-page-title" style={{ margin: 0, fontSize: '1.6rem' }}>
-            <i className="fa-solid fa-screwdriver-wrench" style={{ marginRight: 8, color: 'var(--color-primary)' }}></i>
-            Quản trị Ví & Tạm giữ Escrow
-          </h1>
-          
-          {/* Main Tabs */}
-          <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '12px', padding: '4px' }}>
-            <button
-              onClick={() => setActiveTab('escrow')}
-              style={{
-                border: 'none',
-                padding: '8px 20px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                background: activeTab === 'escrow' ? '#fff' : 'transparent',
-                color: activeTab === 'escrow' ? 'var(--color-primary)' : '#64748b',
-                boxShadow: activeTab === 'escrow' ? '0 4px 6px -1px rgba(0,0,0,0.05)' : 'none',
-                transition: 'all 0.2s'
-              }}
-            >
-              <i className="fa-solid fa-gavel" style={{ marginRight: 6 }}></i>
-              Tranh chấp Escrow ({escrows.filter(e => e.status === 'DISPUTED').length})
-            </button>
-            <button
-              onClick={() => setActiveTab('withdraw')}
-              style={{
-                border: 'none',
-                padding: '8px 20px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.85rem',
-                background: activeTab === 'withdraw' ? '#fff' : 'transparent',
-                color: activeTab === 'withdraw' ? 'var(--color-primary)' : '#64748b',
-                boxShadow: activeTab === 'withdraw' ? '0 4px 6px -1px rgba(0,0,0,0.05)' : 'none',
-                transition: 'all 0.2s'
-              }}
-            >
-              <i className="fa-solid fa-building-columns" style={{ marginRight: 6 }}></i>
-              Yêu cầu Rút tiền ({withdraws.filter(w => w.status === 'PENDING').length})
-            </button>
-          </div>
-        </div>
-
-        {/* ================= TAB 1: ESCROW DISPUTE RESOLUTION ================= */}
-        {activeTab === 'escrow' && (
-          <>
-            {/* Filters */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-              {(['ALL', 'HELD', 'DISPUTED', 'RELEASED', 'REFUNDED'] as const).map(f => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  style={{
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: '20px',
-                    cursor: 'pointer',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    background: filter === f ? 'var(--color-primary)' : '#e2e8f0',
-                    color: filter === f ? '#fff' : '#475569',
-                    boxShadow: filter === f ? '0 4px 10px rgba(90,124,101,0.2)' : 'none',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {f === 'ALL' && 'Tất cả'}
-                  {f === 'HELD' && '🔒 Đang tạm giữ'}
-                  {f === 'DISPUTED' && '⚠️ Đang tranh chấp'}
-                  {f === 'RELEASED' && '🔓 Đã giải ngân'}
-                  {f === 'REFUNDED' && '↩️ Đã hoàn tiền'}
-                </button>
-              ))}
-            </div>
-
-            {filteredEscrows.length === 0 ? (
-              <div className="co-card" style={{ padding: '3rem', textAlign: 'center', color: '#888' }}>
-                <i className="fa-regular fa-folder-open" style={{ fontSize: '2.5rem', marginBottom: '1rem', display: 'block' }}></i>
-                Không tìm thấy giao dịch tạm giữ nào phù hợp bộ lọc.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {filteredEscrows.map(escrow => (
-                  <div key={escrow.id} className="co-card" style={{
-                    border: escrow.status === 'DISPUTED' ? '2px solid #fca5a5' : '1px solid #e2e8f0',
-                    borderRadius: '16px',
-                    overflow: 'hidden'
-                  }}>
-                    {/* Header */}
-                    <div style={{
-                      background: escrow.status === 'DISPUTED' ? '#fef2f2' : '#f8fafc',
-                      padding: '1rem 1.25rem',
-                      borderBottom: '1px solid #eee',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: '10px'
-                    }}>
-                      <div>
-                        <strong style={{ fontSize: '0.95rem' }}>Giao dịch #ESC-{escrow.id}</strong>
-                        <span style={{ color: '#666', fontSize: '0.8rem', marginLeft: '12px' }}>
-                          Yêu cầu thiết kế: <Link to={`/custom-orders/${escrow.request?.id}`} style={{ fontWeight: 600 }}>#REQ-{escrow.request?.id} - {escrow.request?.title}</Link>
-                        </span>
-                      </div>
-                      <span style={{
-                        fontSize: '0.8rem',
-                        fontWeight: 700,
-                        padding: '4px 10px',
-                        borderRadius: '12px',
-                        background: escrow.status === 'HELD' ? '#dbeafe' : escrow.status === 'DISPUTED' ? '#fee2e2' : escrow.status === 'RELEASED' ? '#dcfce7' : '#f1f5f9',
-                        color: escrow.status === 'HELD' ? '#1e40af' : escrow.status === 'DISPUTED' ? '#991b1b' : escrow.status === 'RELEASED' ? '#166534' : '#475569'
-                      }}>
-                        {escrow.status === 'PENDING' && '⏳ Chờ thanh toán'}
-                        {escrow.status === 'HELD' && '🔒 Đang tạm giữ'}
-                        {escrow.status === 'DISPUTED' && '⚠️ Tranh chấp'}
-                        {escrow.status === 'RELEASED' && '🔓 Đã giải ngân'}
-                        {escrow.status === 'REFUNDED' && '↩️ Đã hoàn tiền'}
-                      </span>
-                    </div>
-
-                    {/* Body */}
-                    <div className="co-card__body" style={{ padding: '1.25rem' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', fontSize: '0.88rem', marginBottom: '1rem' }}>
-                        <div>
-                          <span style={{ color: '#666' }}>Khách hàng: </span><strong>{escrow.customer?.fullName}</strong> <span style={{ color: '#888' }}>(#{escrow.customer?.id})</span>
-                        </div>
-                        <div>
-                          <span style={{ color: '#666' }}>Nhà thầu: </span><strong>{escrow.contractor?.fullName}</strong> <span style={{ color: '#888' }}>(#{escrow.contractor?.id})</span>
-                        </div>
-                        <div>
-                          <span style={{ color: '#666' }}>Số tiền: </span><strong style={{ color: '#ef4444' }}>{fmtVND(escrow.amount)}</strong>
-                        </div>
-                        <div>
-                          <span style={{ color: '#666' }}>Ngày tạo: </span><strong>{fmtDate(escrow.createdAt)}</strong>
-                        </div>
-                        <div>
-                          <span style={{ color: '#666' }}>P.Thức T.Toán: </span><strong style={{ color: 'var(--color-primary)' }}>{escrow.paymentMethod || 'Không rõ'}</strong>
-                        </div>
-                      </div>
-
-                      <div style={{ borderTop: '1px dashed #eee', paddingTop: '0.75rem', fontSize: '0.85rem' }}>
-                        <p style={{ margin: '0 0 6px 0', color: '#475569' }}><strong>Mô tả yêu cầu gốc:</strong> {escrow.request?.description}</p>
-                      </div>
-
-                      {/* Disputed details and resolution form */}
-                      {escrow.status === 'DISPUTED' && (
-                        <div style={{ marginTop: '1.25rem', padding: '1rem', background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '8px' }}>
-                          <div style={{ marginBottom: '8px' }}>
-                            <strong style={{ color: '#b45309' }}><i className="fa-solid fa-triangle-exclamation" style={{ marginRight: 6 }}></i>Lý do khách hàng khiếu nại:</strong>
-                            <p style={{ margin: '4px 0 0 0', color: '#78350f', fontStyle: 'italic' }}>"{escrow.disputeReason}"</p>
-                          </div>
-
-                          {/* Admin resolving panel */}
-                          <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #fde68a' }}>
-                            <label style={{ display: 'block', fontWeight: 600, color: '#475569', marginBottom: '6px', fontSize: '0.82rem' }}>Quyết định & Ghi chú phân xử của Admin:</label>
-                            <textarea
-                              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem', resize: 'vertical', fontFamily: 'inherit', marginBottom: '10px' }}
-                              rows={2}
-                              placeholder="Mô tả lý do phân xử (ví dụ: Nhà thầu đồng ý hoàn tiền, hoặc Sản phẩm đã bàn giao đầy đủ đúng hẹn...)"
-                              value={adminNotes}
-                              onChange={e => setAdminNotes(e.target.value)}
-                            />
-                            <div style={{ display: 'flex', gap: '0.75rem' }}>
-                              <button
-                                className="btn btn--primary"
-                                style={{ background: '#166534', color: '#fff', fontSize: '0.8rem', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', border: 'none' }}
-                                onClick={() => handleResolve(escrow.id, 'RELEASE')}
-                                disabled={resolvingId === escrow.id}
-                              >
-                                <i className="fa-solid fa-circle-check" style={{ marginRight: 6 }}></i>
-                                Giải ngân cho nhà thầu
-                              </button>
-                              <button
-                                className="btn"
-                                style={{ background: '#ef4444', color: '#fff', fontSize: '0.8rem', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', border: 'none' }}
-                                onClick={() => handleResolve(escrow.id, 'REFUND')}
-                                disabled={resolvingId === escrow.id}
-                              >
-                                <i className="fa-solid fa-arrow-rotate-left" style={{ marginRight: 6 }}></i>
-                                Hoàn tiền cho khách hàng
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* resolved notes */}
-                      {escrow.disputeResolution && (
-                        <div style={{ marginTop: '1rem', padding: '0.85rem', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '8px', fontSize: '0.83rem' }}>
-                          <strong style={{ color: '#166534' }}><i className="fa-solid fa-gavel" style={{ marginRight: 6 }}></i>Nội dung phân xử tranh chấp:</strong>
-                          <p style={{ margin: '4px 0 0 0', color: '#14532d' }}>"{escrow.disputeResolution}"</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
-        {/* ================= TAB 2: BANK WITHDRAWAL APPROVALS ================= */}
-        {activeTab === 'withdraw' && (
-          <>
-            {/* Filters */}
-            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-              {(['ALL', 'PENDING', 'APPROVED', 'REJECTED'] as const).map(wf => (
-                <button
-                  key={wf}
-                  onClick={() => setWithdrawFilter(wf)}
-                  style={{
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: '20px',
-                    cursor: 'pointer',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    background: withdrawFilter === wf ? 'var(--color-primary)' : '#e2e8f0',
-                    color: withdrawFilter === wf ? '#fff' : '#475569',
-                    boxShadow: withdrawFilter === wf ? '0 4px 10px rgba(90,124,101,0.2)' : 'none',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {wf === 'ALL' && 'Tất cả'}
-                  {wf === 'PENDING' && '⏳ Chờ phê duyệt'}
-                  {wf === 'APPROVED' && '✅ Đã phê duyệt'}
-                  {wf === 'REJECTED' && '❌ Đã từ chối'}
-                </button>
-              ))}
-            </div>
-
-            {filteredWithdraws.length === 0 ? (
-              <div className="co-card" style={{ padding: '3rem', textAlign: 'center', color: '#888' }}>
-                <i className="fa-regular fa-folder-open" style={{ fontSize: '2.5rem', marginBottom: '1rem', display: 'block' }}></i>
-                Không tìm thấy yêu cầu rút tiền nào phù hợp bộ lọc.
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {filteredWithdraws.map(req => (
-                  <div key={req.id} className="co-card" style={{
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '12px',
-                    padding: '1.25rem'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '10px' }}>
-                      <div>
-                        <strong>Yêu cầu rút tiền #WR-{req.id}</strong>
-                        <span style={{ fontSize: '0.78rem', color: '#64748b', marginLeft: '10px' }}>Gửi lúc: {fmtDate(req.createdAt)}</span>
-                      </div>
-                      <span style={{
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        padding: '2px 8px',
-                        borderRadius: '10px',
-                        background: req.status === 'PENDING' ? '#fef3c7' : req.status === 'APPROVED' ? '#dcfce7' : '#fee2e2',
-                        color: req.status === 'PENDING' ? '#b45309' : req.status === 'APPROVED' ? '#15803d' : '#991b1b',
-                      }}>
-                        {req.status === 'PENDING' && 'Chờ duyệt'}
-                        {req.status === 'APPROVED' && 'Đã duyệt (Thành công)'}
-                        {req.status === 'REJECTED' && 'Đã từ chối'}
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', fontSize: '0.85rem' }}>
-                      <div>
-                        <span style={{ color: '#64748b' }}>Thành viên: </span>
-                        <strong>{req.user?.fullName}</strong> <span style={{ color: '#888' }}>(Role: {req.user?.role})</span>
-                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Email: {req.user?.email}</div>
-                      </div>
-                      <div>
-                        <span style={{ color: '#64748b' }}>Thông tin tài khoản nhận: </span>
-                        <div><strong>Ngân hàng: </strong>{req.bankName}</div>
-                        <div><strong>STK: </strong>{req.accountNumber}</div>
-                        <div><strong>Chủ TK: </strong>{req.accountHolderName}</div>
-                      </div>
-                      <div>
-                        <span style={{ color: '#64748b' }}>Số tiền yêu cầu rút: </span>
-                        <h3 style={{ margin: '4px 0', color: '#b91c1c', fontSize: '1.25rem', fontWeight: 800 }}>{fmtVND(req.amount)}</h3>
-                      </div>
-
-                      {/* Action buttons for PENDING requests */}
-                      {req.status === 'PENDING' && (
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', justifyContent: 'flex-end' }}>
-                          <button
-                            className="btn btn--primary"
-                            style={{ background: '#166534', color: '#fff', fontSize: '0.78rem', padding: '8px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}
-                            onClick={() => handleApproveWithdraw(req.id)}
-                            disabled={processingWithdrawId === req.id}
-                          >
-                            <i className="fa-solid fa-check" style={{ marginRight: 4 }}></i> Phê duyệt
-                          </button>
-                          <button
-                            className="btn"
-                            style={{ background: '#ef4444', color: '#fff', fontSize: '0.78rem', padding: '8px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer' }}
-                            onClick={() => handleRejectWithdraw(req.id)}
-                            disabled={processingWithdrawId === req.id}
-                          >
-                            <i className="fa-solid fa-xmark" style={{ marginRight: 4 }}></i> Từ chối
-                          </button>
-                        </div>
-                      )}
-
-                      {req.status !== 'PENDING' && req.processedAt && (
-                        <div style={{ fontSize: '0.75rem', color: '#64748b', textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                          <div>Xử lý lúc:</div>
-                          <strong>{fmtDate(req.processedAt)}</strong>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-
+    <div>
+      <div className="admin-page-header">
+        <h1>Quản Trị Ví & Escrow</h1>
+        <p>Giải ngân, xử lý tranh chấp, duyệt rút tiền và theo dõi hoa hồng platform</p>
       </div>
 
+      {/* ── Summary Stats ── */}
+      <div className="admin-stat-grid" style={{marginBottom:20}}>
+        <div className="admin-stat-card stat-blue">
+          <div className="stat-icon-wrap bg-blue"><i className="fa-solid fa-lock"/></div>
+          <div className="stat-info">
+            <div className="stat-value">{escrows.filter(e=>e.status==='HELD').length}</div>
+            <div className="stat-label">Đang tạm giữ</div>
+          </div>
+        </div>
+        <div className="admin-stat-card stat-green">
+          <div className="stat-icon-wrap bg-green"><i className="fa-solid fa-circle-check"/></div>
+          <div className="stat-info">
+            <div className="stat-value">{escrows.filter(e=>e.status==='AWAITING_RELEASE').length}</div>
+            <div className="stat-label">Chờ admin giải ngân</div>
+          </div>
+        </div>
+        <div className="admin-stat-card stat-red">
+          <div className="stat-icon-wrap bg-red"><i className="fa-solid fa-triangle-exclamation"/></div>
+          <div className="stat-info">
+            <div className="stat-value">{escrows.filter(e=>e.status==='DISPUTED').length}</div>
+            <div className="stat-label">Tranh chấp cần xử lý</div>
+          </div>
+        </div>
+        <div className="admin-stat-card stat-gold">
+          <div className="stat-icon-wrap bg-gold"><i className="fa-solid fa-building-columns"/></div>
+          <div className="stat-info">
+            <div className="stat-value">{withdraws.filter(w=>w.status==='PENDING').length}</div>
+            <div className="stat-label">Yêu cầu rút tiền chờ duyệt</div>
+          </div>
+        </div>
+        <div className="admin-stat-card stat-green">
+          <div className="stat-icon-wrap bg-green"><i className="fa-solid fa-sack-dollar"/></div>
+          <div className="stat-info">
+            <div className="stat-value" style={{fontSize:'1.3rem'}}>{fmtVND(commission?.totalCommissionEarned ?? 0)}</div>
+            <div className="stat-label">Tổng hoa hồng đã thu</div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Tab Bar ── */}
+      <div style={{display:'flex',gap:8,marginBottom:20,background:'#f1f5f9',padding:4,borderRadius:12,width:'fit-content'}}>
+        {([['escrow','fa-gavel','Escrow & Tranh Chấp'],['withdraw','fa-building-columns','Rút Tiền'],['commission','fa-sack-dollar','Hoa Hồng Platform']] as const).map(([tab, icon, label]) => (
+          <button key={tab} onClick={() => setActiveTab(tab as Tab)} style={{
+            border:'none', padding:'9px 20px', borderRadius:9, cursor:'pointer', fontWeight:600, fontSize:'0.85rem', fontFamily:'inherit',
+            background: activeTab===tab ? '#fff' : 'transparent',
+            color: activeTab===tab ? '#1d4ed8' : '#64748b',
+            boxShadow: activeTab===tab ? '0 2px 8px rgba(0,0,0,0.08)' : 'none', transition:'all 0.2s'
+          }}>
+            <i className={`fa-solid ${icon}`} style={{marginRight:6}}/>{label}
+            {tab==='escrow' && escrows.filter(e=>e.status==='DISPUTED').length > 0 &&
+              <span style={{background:'#dc2626',color:'#fff',borderRadius:10,padding:'1px 7px',fontSize:'0.7rem',marginLeft:6}}>{escrows.filter(e=>e.status==='DISPUTED').length}</span>}
+            {tab==='withdraw' && withdraws.filter(w=>w.status==='PENDING').length > 0 &&
+              <span style={{background:'#d97706',color:'#fff',borderRadius:10,padding:'1px 7px',fontSize:'0.7rem',marginLeft:6}}>{withdraws.filter(w=>w.status==='PENDING').length}</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* ═══════════ TAB 1: ESCROW ═══════════ */}
+      {activeTab === 'escrow' && (
+        <div className="admin-card">
+          <div className="admin-card-header">
+            <h3 className="admin-card-title"><i className="fa-solid fa-gavel"/>Danh sách Escrow ({filteredEscrows.length})</h3>
+          </div>
+          {/* Filter */}
+          <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
+            {['ALL','PENDING','HELD','AWAITING_RELEASE','DISPUTED','RELEASED','REFUNDED'].map(f => (
+              <button key={f} onClick={()=>setFilter(f)} className={`admin-btn admin-btn-sm ${filter===f?'admin-btn-primary':'admin-btn-ghost'}`}>
+                {f==='ALL'?'Tất cả':statusLabel[f]}
+              </button>
+            ))}
+          </div>
+          {filteredEscrows.length === 0 ? (
+            <div className="admin-empty"><i className="fa-solid fa-folder-open"/>Không có dữ liệu</div>
+          ) : filteredEscrows.map(escrow => (
+            <div key={escrow.id} style={{
+              border: `2px solid ${escrow.status==='DISPUTED'?'#fca5a5':'#e2e8f0'}`,
+              borderRadius:12, marginBottom:16, overflow:'hidden'
+            }}>
+              {/* Card header */}
+              <div style={{background:escrow.status==='DISPUTED'?'#fef2f2':'#f8fafc',padding:'12px 18px',display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:8}}>
+                <div>
+                  <strong>ESC-{escrow.id}</strong>
+                  <span style={{color:'#64748b',fontSize:'0.82rem',marginLeft:12}}>
+                    Đơn #{escrow.request?.id} — {escrow.request?.title}
+                  </span>
+                </div>
+                <span style={{...statusColor[escrow.status],padding:'3px 12px',borderRadius:20,fontSize:'0.78rem',fontWeight:700}}>
+                  {statusLabel[escrow.status]}
+                </span>
+              </div>
+              {/* Card body */}
+              <div style={{padding:'14px 18px'}}>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:'10px 20px',fontSize:'0.85rem',marginBottom:10}}>
+                  <div><span style={{color:'#64748b'}}>Khách hàng: </span><strong>{escrow.customer?.fullName}</strong></div>
+                  <div><span style={{color:'#64748b'}}>Nhà thầu: </span><strong>{escrow.contractor?.fullName}</strong></div>
+                  <div><span style={{color:'#64748b'}}>Tổng đơn: </span><strong style={{color:'#dc2626'}}>{fmtVND(escrow.amount)}</strong></div>
+                  <div><span style={{color:'#64748b'}}>Hoa hồng (5%): </span><strong style={{color:'#d97706'}}>{fmtVND(escrow.commissionAmount)}</strong></div>
+                  <div><span style={{color:'#64748b'}}>Nhà thầu nhận: </span><strong style={{color:'#16a34a'}}>{fmtVND(escrow.netAmount)}</strong></div>
+                  <div><span style={{color:'#64748b'}}>Thanh toán: </span><strong>{escrow.paymentMethod||'—'}</strong></div>
+                  <div><span style={{color:'#64748b'}}>Ngày tạo: </span>{fmtDate(escrow.createdAt)}</div>
+                  {escrow.releasedAt && <div><span style={{color:'#64748b'}}>Giải ngân: </span>{fmtDate(escrow.releasedAt)}</div>}
+                  {escrow.refundedAt && <div><span style={{color:'#64748b'}}>Hoàn tiền: </span>{fmtDate(escrow.refundedAt)}</div>}
+                </div>
+                {/* AWAITING_RELEASE: Admin giải ngân */}
+                {escrow.status === 'AWAITING_RELEASE' && (
+                  <div style={{background:'#f0fdf4',border:'2px solid #86efac',borderRadius:10,padding:'14px',marginTop:8}}>
+                    <div style={{fontWeight:700,color:'#166534',marginBottom:10,fontSize:'0.9rem'}}>
+                      <i className="fa-solid fa-circle-check" style={{marginRight:8}}/>
+                      Khách hàng đã xác nhận nhận hàng — Sẵn sàng giải ngân
+                    </div>
+                    <div style={{display:'flex',gap:8,fontSize:'0.85rem',marginBottom:12,background:'#dcfce7',padding:'10px 12px',borderRadius:8}}>
+                      <div style={{flex:1}}><span style={{color:'#64748b'}}>Nhà thầu nhận: </span><strong style={{color:'#166534'}}>{fmtVND(escrow.netAmount)}</strong></div>
+                      <div style={{flex:1}}><span style={{color:'#64748b'}}>Hoa hồng (5%): </span><strong style={{color:'#d97706'}}>{fmtVND(escrow.commissionAmount)}</strong></div>
+                    </div>
+                    <button
+                      className="admin-btn admin-btn-success"
+                      style={{width:'100%',justifyContent:'center',padding:'11px'}}
+                      disabled={releasingId === escrow.id}
+                      onClick={() => handleAdminRelease(escrow.id, escrow.netAmount, escrow.commissionAmount)}
+                    >
+                      {releasingId === escrow.id
+                        ? <><i className="fa-solid fa-spinner fa-spin"/>Đang xử lý...</>
+                        : <><i className="fa-solid fa-paper-plane"/>Giải ngân {fmtVND(escrow.netAmount)} cho nhà thầu</>
+                      }
+                    </button>
+                  </div>
+                )}
+
+                {/* Disputed: phân xử */}
+                {escrow.status === 'DISPUTED' && (
+                  <div style={{background:'#fffbeb',border:'1px solid #fde68a',borderRadius:8,padding:'12px 14px',marginTop:8}}>
+                    <div style={{marginBottom:8}}>
+                      <strong style={{color:'#b45309'}}><i className="fa-solid fa-triangle-exclamation" style={{marginRight:6}}/>Lý do khiếu nại:</strong>
+                      <p style={{margin:'4px 0 0',color:'#92400e',fontStyle:'italic'}}>"{escrow.disputeReason}"</p>
+                    </div>
+                    <div style={{borderTop:'1px solid #fde68a',paddingTop:10,marginTop:8}}>
+                      <label style={{display:'block',fontWeight:600,fontSize:'0.82rem',color:'#475569',marginBottom:6}}>Ghi chú phân xử (bắt buộc):</label>
+                      <textarea rows={2} style={{width:'100%',padding:'8px',borderRadius:7,border:'1px solid #cbd5e1',fontSize:'0.85rem',fontFamily:'inherit',resize:'vertical',marginBottom:10}}
+                        placeholder="Mô tả lý do: nhà thầu hoàn thành đúng hẹn / khách hàng có bằng chứng sản phẩm lỗi..."
+                        value={adminNotes} onChange={e=>setAdminNotes(e.target.value)}/>
+                      <div style={{display:'flex',gap:10}}>
+                        <button className="admin-btn admin-btn-success" onClick={()=>handleResolve(escrow.id,'RELEASE')} disabled={resolvingId===escrow.id}>
+                          <i className="fa-solid fa-check"/>Giải ngân nhà thầu (trừ 5% hoa hồng)
+                        </button>
+                        <button className="admin-btn admin-btn-danger" onClick={()=>handleResolve(escrow.id,'REFUND')} disabled={resolvingId===escrow.id}>
+                          <i className="fa-solid fa-arrow-rotate-left"/>Hoàn tiền đầy đủ cho khách
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {escrow.disputeResolution && (
+                  <div style={{background:'#f0fdf4',border:'1px solid #86efac',borderRadius:8,padding:'10px 14px',marginTop:8,fontSize:'0.83rem'}}>
+                    <strong style={{color:'#166534'}}><i className="fa-solid fa-gavel" style={{marginRight:6}}/>Quyết định phân xử:</strong>
+                    <p style={{margin:'4px 0 0',color:'#14532d'}}>"{escrow.disputeResolution}"</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ═══════════ TAB 2: RÚT TIỀN ═══════════ */}
+      {activeTab === 'withdraw' && (
+        <div className="admin-card">
+          <div className="admin-card-header">
+            <h3 className="admin-card-title"><i className="fa-solid fa-building-columns"/>Yêu Cầu Rút Tiền ({filteredWithdraws.length})</h3>
+          </div>
+          <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
+            {['ALL','PENDING','APPROVED','REJECTED'].map(f => (
+              <button key={f} onClick={()=>setWithdrawFilter(f)} className={`admin-btn admin-btn-sm ${withdrawFilter===f?'admin-btn-primary':'admin-btn-ghost'}`}>
+                {f==='ALL'?'Tất cả':f==='PENDING'?'⏳ Chờ duyệt':f==='APPROVED'?'✅ Đã duyệt':'❌ Đã từ chối'}
+              </button>
+            ))}
+          </div>
+          {filteredWithdraws.length === 0 ? (
+            <div className="admin-empty"><i className="fa-solid fa-folder-open"/>Không có yêu cầu nào</div>
+          ) : (
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead><tr>
+                  <th>Mã</th><th>Thành viên</th><th>Ngân hàng</th><th>Số tiền</th><th>Ngày gửi</th><th>Trạng thái</th><th>Thao tác</th>
+                </tr></thead>
+                <tbody>
+                  {filteredWithdraws.map(req => (
+                    <tr key={req.id}>
+                      <td><span className="id-cell">#WR-{req.id}</span></td>
+                      <td>
+                        <div className="name-cell">{req.user?.fullName}</div>
+                        <div style={{fontSize:'0.75rem',color:'#94a3b8'}}>{req.user?.email} · {req.user?.role}</div>
+                      </td>
+                      <td>
+                        <div style={{fontWeight:600}}>{req.bankName}</div>
+                        <div style={{fontSize:'0.78rem',color:'#64748b'}}>{req.accountNumber} — {req.accountHolderName}</div>
+                      </td>
+                      <td><strong style={{color:'#dc2626',fontSize:'1rem'}}>{fmtVND(req.amount)}</strong></td>
+                      <td style={{fontSize:'0.8rem'}}>{fmtDate(req.createdAt)}</td>
+                      <td>
+                        <span className={`status-badge ${req.status==='PENDING'?'pending':req.status==='APPROVED'?'completed':'cancelled'}`}>
+                          {req.status==='PENDING'?'Chờ duyệt':req.status==='APPROVED'?'Đã duyệt':'Đã từ chối'}
+                        </span>
+                      </td>
+                      <td>
+                        {req.status === 'PENDING' ? (
+                          <div style={{display:'flex',gap:6}}>
+                            <button className="admin-btn admin-btn-success admin-btn-sm" onClick={()=>handleApproveWithdraw(req.id)} disabled={processingWithdrawId===req.id}>
+                              <i className="fa-solid fa-check"/>Duyệt
+                            </button>
+                            <button className="admin-btn admin-btn-danger admin-btn-sm" onClick={()=>handleRejectWithdraw(req.id)} disabled={processingWithdrawId===req.id}>
+                              <i className="fa-solid fa-xmark"/>Từ chối
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{fontSize:'0.78rem',color:'#94a3b8'}}>{req.processedAt ? fmtDate(req.processedAt) : '—'}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ═══════════ TAB 3: HOA HỒNG ═══════════ */}
+      {activeTab === 'commission' && commission && (
+        <div>
+          {/* Stats cards */}
+          <div className="admin-stat-grid" style={{marginBottom:20}}>
+            <div className="admin-stat-card stat-green">
+              <div className="stat-icon-wrap bg-green"><i className="fa-solid fa-sack-dollar"/></div>
+              <div className="stat-info">
+                <div className="stat-value" style={{fontSize:'1.4rem'}}>{fmtVND(commission.totalCommissionEarned)}</div>
+                <div className="stat-label">Tổng hoa hồng đã thu</div>
+              </div>
+            </div>
+            <div className="admin-stat-card stat-blue">
+              <div className="stat-icon-wrap bg-blue"><i className="fa-solid fa-wallet"/></div>
+              <div className="stat-info">
+                <div className="stat-value" style={{fontSize:'1.4rem'}}>{fmtVND(commission.adminWalletBalance)}</div>
+                <div className="stat-label">Số dư ví Admin hiện tại</div>
+              </div>
+            </div>
+            <div className="admin-stat-card stat-purple">
+              <div className="stat-icon-wrap bg-purple"><i className="fa-solid fa-percent"/></div>
+              <div className="stat-info">
+                <div className="stat-value">{(commission.commissionRate * 100).toFixed(0)}%</div>
+                <div className="stat-label">Tỷ lệ hoa hồng</div>
+              </div>
+            </div>
+            <div className="admin-stat-card stat-gold">
+              <div className="stat-icon-wrap bg-gold"><i className="fa-solid fa-check-double"/></div>
+              <div className="stat-info">
+                <div className="stat-value">{commission.totalReleasedEscrows}</div>
+                <div className="stat-label">Đơn đã giải ngân</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="admin-card">
+            <div className="admin-card-header">
+              <h3 className="admin-card-title"><i className="fa-solid fa-clock-rotate-left"/>Lịch Sử Hoa Hồng Gần Đây</h3>
+            </div>
+            {commission.recentCommissions.length === 0 ? (
+              <div className="admin-empty"><i className="fa-solid fa-coins"/>Chưa có hoa hồng nào được ghi nhận</div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead><tr>
+                    <th>Mã Escrow</th><th>Đơn hàng</th><th>Khách hàng</th><th>Nhà thầu</th>
+                    <th>Tổng đơn</th><th>Hoa hồng (5%)</th><th>NTầu nhận</th><th>Ngày giải ngân</th>
+                  </tr></thead>
+                  <tbody>
+                    {commission.recentCommissions.map(c => (
+                      <tr key={c.escrowId}>
+                        <td><span className="id-cell">ESC-{c.escrowId}</span></td>
+                        <td><div className="name-cell" style={{maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.requestTitle}</div></td>
+                        <td style={{fontSize:'0.83rem'}}>{c.customerName}</td>
+                        <td style={{fontSize:'0.83rem'}}>{c.contractorName}</td>
+                        <td style={{fontWeight:600}}>{fmtVND(c.amount)}</td>
+                        <td><strong style={{color:'#d97706'}}>{fmtVND(c.commissionAmount)}</strong></td>
+                        <td><strong style={{color:'#16a34a'}}>{fmtVND(c.netAmount)}</strong></td>
+                        <td style={{fontSize:'0.8rem'}}>{fmtDate(c.releasedAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {toast && (
-        <div className={`co-toast co-toast--${toast.type}`} style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 1000 }}>
+        <div style={{
+          position:'fixed', bottom:24, right:24, zIndex:9999,
+          background: toast.type==='success'?'#166534':'#991b1b',
+          color:'#fff', padding:'12px 20px', borderRadius:10,
+          boxShadow:'0 4px 20px rgba(0,0,0,0.2)', fontSize:'0.9rem', fontWeight:600,
+          display:'flex', alignItems:'center', gap:10
+        }}>
+          <i className={`fa-solid ${toast.type==='success'?'fa-circle-check':'fa-circle-exclamation'}`}/>
           {toast.msg}
         </div>
       )}

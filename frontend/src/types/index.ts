@@ -14,6 +14,9 @@ export interface Product {
   badges: string[];
   status?: string;
   stock?: number;
+  shopId?: number;
+  shopName?: string;
+  shopSlug?: string;
 }
 
 export interface Category {

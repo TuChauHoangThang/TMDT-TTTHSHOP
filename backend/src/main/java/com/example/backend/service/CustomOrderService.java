@@ -192,8 +192,12 @@ public class CustomOrderService {
         request.setStatus(CustomOrderRequest.Status.WAITING_FOR_PAYMENT);
         requestRepo.save(request);
 
+        // Re-fetch quote từ DB để đảm bảo data đầy đủ (tránh Hibernate detached issue)
+        CustomOrderQuote freshQuote = quoteRepo.findById(quoteId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy báo giá #" + quoteId));
+
         // Tạo bản ghi Escrow PENDING
-        escrowService.createEscrow(request, selectedQuote);
+        escrowService.createEscrow(request, freshQuote);
 
         // Trả về DTO đã có đầy đủ info nhà thầu
         CustomOrderDto.RequestResponse resp = CustomOrderDto.RequestResponse.from(request, true);

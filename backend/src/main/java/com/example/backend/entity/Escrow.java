@@ -16,14 +16,17 @@ public class Escrow {
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "request_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"quotes", "images", "selectedQuoteId"})
     private CustomOrderRequest request;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "customer_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"password", "provider", "providerId"})
     private User customer;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "contractor_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"password", "provider", "providerId"})
     private User contractor;
 
     @Column(nullable = false, precision = 15, scale = 2)
@@ -41,6 +44,18 @@ public class Escrow {
 
     @Column(name = "dispute_resolution", columnDefinition = "TEXT")
     private String disputeResolution;
+
+    /** Tỷ lệ hoa hồng (mặc định 5%) */
+    @Column(name = "commission_rate", precision = 5, scale = 4)
+    private BigDecimal commissionRate = new BigDecimal("0.05");
+
+    /** Số tiền hoa hồng platform thu (= amount * commissionRate) */
+    @Column(name = "commission_amount", precision = 15, scale = 2)
+    private BigDecimal commissionAmount = BigDecimal.ZERO;
+
+    /** Số tiền nhà thầu thực nhận sau khi trừ hoa hồng */
+    @Column(name = "net_amount", precision = 15, scale = 2)
+    private BigDecimal netAmount = BigDecimal.ZERO;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -92,6 +107,15 @@ public class Escrow {
 
     public String getDisputeResolution() { return disputeResolution; }
     public void setDisputeResolution(String disputeResolution) { this.disputeResolution = disputeResolution; }
+
+    public BigDecimal getCommissionRate() { return commissionRate; }
+    public void setCommissionRate(BigDecimal commissionRate) { this.commissionRate = commissionRate; }
+
+    public BigDecimal getCommissionAmount() { return commissionAmount; }
+    public void setCommissionAmount(BigDecimal commissionAmount) { this.commissionAmount = commissionAmount; }
+
+    public BigDecimal getNetAmount() { return netAmount; }
+    public void setNetAmount(BigDecimal netAmount) { this.netAmount = netAmount; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

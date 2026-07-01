@@ -27,6 +27,7 @@ import SellerRFQDetail from './pages/Seller/SellerRFQDetail';
 import ContractorLayout from './pages/Contractor/ContractorLayout';
 import ContractorDashboard from './pages/Contractor/ContractorDashboard';
 import ContractorProfile from './pages/Contractor/ContractorProfile';
+import ContractorProducts from './pages/Contractor/ContractorProducts';
 import CustomerLayout from './pages/Customer/CustomerLayout';
 import CustomerDashboard from './pages/Customer/CustomerDashboard';
 import CustomerOrders from './pages/Customer/CustomerOrders';
@@ -41,6 +42,7 @@ import AdminCustomOrders from './pages/Admin/AdminCustomOrders';
 import AdminCustomers from './pages/Admin/AdminCustomers';
 import AdminContractors from './pages/Admin/AdminContractors';
 import AdminProducts from './pages/Admin/AdminProducts';
+import AdminPendingProducts from './pages/Admin/AdminPendingProducts';
 import AdminEscrowDashboard from './pages/Admin/AdminEscrowDashboard';
 import ScrollToTop from './components/ScrollToTop/ScrollToTop';
 import AboutPage from './pages/About/AboutPage';
@@ -92,6 +94,7 @@ function App() {
               <Route path="/contractor" element={<ProtectedRoute allowedRoles={['CONTRACTOR', 'ADMIN']}><ContractorLayout /></ProtectedRoute>}>
                 <Route path="dashboard" element={<ContractorDashboard />} />
                 <Route path="profile" element={<ContractorProfile />} />
+                <Route path="products" element={<ContractorProducts />} />
                 <Route path="rfq" element={<SellerRFQList />} />
                 <Route path="rfq/:id" element={<SellerRFQDetail />} />
                 <Route path="wallet" element={<Wallet />} />
@@ -118,6 +121,7 @@ function App() {
                 <Route path="customers" element={<AdminCustomers />} />
                 <Route path="contractors" element={<AdminContractors />} />
                 <Route path="products" element={<AdminProducts />} />
+                <Route path="products/pending" element={<AdminPendingProducts />} />
                 <Route path="escrow" element={<AdminEscrowDashboard />} />
               </Route>
             </Routes>

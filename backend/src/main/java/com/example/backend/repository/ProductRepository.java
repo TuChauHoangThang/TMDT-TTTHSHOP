@@ -18,6 +18,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     boolean existsBySlug(String slug);
 
+    Page<Product> findByShopId(Long shopId, Pageable pageable);
+
+    List<Product> findByStatusOrderByCreatedAtDesc(Product.Status status);
+
     /**
      * Tìm kiếm sản phẩm với keyword (tên) và/hoặc category slug.
      * Chỉ trả về sản phẩm ACTIVE.
