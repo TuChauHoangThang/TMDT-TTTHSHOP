@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { adminService } from '../../services/adminService';
 import type { AdminStats } from '../../services/adminService';
 import { AdminCharts } from './AdminCharts';
-
+import { TopPartnersWidget } from '../../components/TopPartners/TopPartnersWidget';
 const fmt = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
 
@@ -175,7 +175,10 @@ const AdminDashboard: React.FC = () => {
 
       {/* ── Visual Analytics Charts ── */}
       <AdminCharts data={stats.chartData || []} />
-
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginTop: '2rem' }}>
+        <TopPartnersWidget type="contractor" limit={10} />
+        <TopPartnersWidget type="customer" limit={10} />
+      </div>
       <div style={{ height: '2rem' }} />
 
       {/* ── Order breakdown ── */}

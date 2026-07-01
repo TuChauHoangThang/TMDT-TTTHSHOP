@@ -5,10 +5,11 @@ import com.example.backend.dto.auth.LoginRequest;
 import com.example.backend.dto.auth.RegisterRequest;
 import com.example.backend.dto.auth.RegisterContractorRequest;
 import com.example.backend.entity.User;
-import com.example.backend.service.AuthService;
-import com.example.backend.entity.User;
 import com.example.backend.entity.Role;
+import com.example.backend.entity.Shop; // <-- ĐÃ THÊM IMPORT SHOP
 import com.example.backend.repository.UserRepository;
+import com.example.backend.repository.ShopRepository; // <-- ĐÃ THÊM IMPORT SHOP REPOSITORY
+import com.example.backend.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,11 +24,14 @@ public class AuthController {
     private final AuthService authService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ShopRepository shopRepository; // <-- ĐÃ THÊM BIẾN SHOP REPOSITORY
 
-    public AuthController(AuthService authService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    // Cập nhật lại Constructor để Spring tự động tiêm (Inject) thêm ShopRepository vào
+    public AuthController(AuthService authService, UserRepository userRepository, PasswordEncoder passwordEncoder, ShopRepository shopRepository) {
         this.authService = authService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.shopRepository = shopRepository; // <-- ĐÃ THÊM GAN BIẾN
     }
 
     @GetMapping("/reset-admin")
@@ -75,14 +79,51 @@ public class AuthController {
         }
     }
 
+    // ---- ĐÃ FIX LỖI: Hàm sinh tự động tài khoản CONTRACTOR test ----
+    @GetMapping("/reset-seller")
+    public ResponseEntity<?> resetSeller() {
+        try {
+            // 1. Tìm hoặc tạo tài khoản Seller trong bảng users
+            User seller = userRepository.findByEmail("seller@test.com").orElse(null);
+            if (seller == null) {
+                seller = new User();
+                seller.setEmail("seller@test.com");
+                seller.setFullName("Nhà Thầu Sofa Test");
+                seller.setPhone("0911223344");
+                seller.setRole(Role.CONTRACTOR);
+            }
+            seller.setActive(true);
+            seller.setPassword(passwordEncoder.encode("Seller@123"));
+            User savedSeller = userRepository.save(seller);
+
+            // 2. Tự động kiểm tra và tạo Cửa hàng đi kèm cho Contractor này
+            boolean hasShop = shopRepository.findByOwnerId(savedSeller.getId()).isPresent();
+            if (!hasShop) {
+                Shop shop = new Shop();
+                shop.setOwner(savedSeller);
+                shop.setName("Xưởng Nội Thất Sofa Test");
+                shop.setSlug("xuong-noi-that-sofa-test-" + System.currentTimeMillis());
+                shop.setAddress("123 Đường Số 1, TP.HCM");
+                shop.setDescription("Cửa hàng demo được tạo tự động để test hệ thống.");
+                shop.setRating(java.math.BigDecimal.ZERO);
+                shop.setRatingCount(0);
+                shopRepository.save(shop);
+            }
+
+            return ResponseEntity.ok("Successfully reset seller password to Seller@123 and activated the account!");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
             User user = authService.register(request);
             return ResponseEntity.ok(Map.of(
-                "otpRequired", true,
-                "email", user.getEmail(),
-                "message", "Mã OTP đã được gửi đến email đăng ký của bạn. Vui lòng xác thực để kích hoạt tài khoản."
+                    "otpRequired", true,
+                    "email", user.getEmail(),
+                    "message", "Mã OTP đã được gửi đến email đăng ký của bạn. Vui lòng xác thực để kích hoạt tài khoản."
             ));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -94,8 +135,8 @@ public class AuthController {
         try {
             User user = authService.registerContractor(request);
             return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Đăng ký tài khoản nhà thầu thành công. Tài khoản của bạn hiện đang chờ quản trị viên xét duyệt."
+                    "success", true,
+                    "message", "Đăng ký tài khoản nhà thầu thành công. Tài khoản của bạn hiện đang chờ quản trị viên xét duyệt."
             ));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
