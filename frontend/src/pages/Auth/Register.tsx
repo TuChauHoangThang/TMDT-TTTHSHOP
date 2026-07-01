@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import logoImg from '../../assets/Logo.jpeg';
@@ -22,7 +22,7 @@ const scorePassword = (pwd: string): { score: number; label: string; color: stri
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, verifyOtp, resendOtp } = useAuth();
 
   const [form, setForm] = useState({ fullName: '', email: '', phone: '', password: '', confirm: '' });
   const [showPwd, setShowPwd] = useState(false);
@@ -30,12 +30,29 @@ const Register: React.FC = () => {
   const [agree, setAgree] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Partial<typeof form>>({});
+
+  // Các State hỗ trợ màn hình OTP
+  const [step, setStep] = useState<'FORM' | 'OTP'>('FORM');
+  const [otpCode, setOtpCode] = useState('');
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [countdown, setCountdown] = useState(0);
+
+  // Bộ đếm thời gian gửi lại OTP
+  useEffect(() => {
+    if (countdown <= 0) return;
+    const timer = setInterval(() => {
+      setCountdown(c => c - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [countdown]);
 
   const update = (field: keyof typeof form, value: string) => {
     setForm(f => ({ ...f, [field]: value }));
     setFieldErrors(fe => ({ ...fe, [field]: undefined }));
     setError('');
+    setSuccessMsg('');
   };
 
   const pwdStrength = scorePassword(form.password);
@@ -57,15 +74,184 @@ const Register: React.FC = () => {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
+    setError('');
+    setSuccessMsg('');
     try {
-      await register(form.fullName.trim(), form.email.trim(), form.password, form.phone.trim() || undefined);
-      navigate('/', { replace: true });
+      const res = await register(form.fullName.trim(), form.email.trim(), form.password, form.phone.trim() || undefined);
+      if (res && res.otpRequired) {
+        setRegisteredEmail(form.email.trim());
+        setStep('OTP');
+        setOtpCode('');
+        setCountdown(60);
+      } else {
+        navigate('/', { replace: true });
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Đăng ký thất bại, vui lòng thử lại');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpCode.trim()) {
+      setError('Vui lòng nhập mã OTP');
+      return;
+    }
+    if (otpCode.trim().length !== 6) {
+      setError('Mã OTP phải gồm 6 chữ số');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setSuccessMsg('');
+    try {
+      await verifyOtp(registeredEmail, otpCode.trim());
+      navigate('/', { replace: true });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Xác thực OTP thất bại, vui lòng thử lại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (countdown > 0) return;
+    setLoading(true);
+    setError('');
+    setSuccessMsg('');
+    try {
+      await resendOtp(registeredEmail);
+      setCountdown(60);
+      setSuccessMsg('Một mã OTP mới đã được gửi tới email của bạn!');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Gửi lại OTP thất bại, vui lòng thử lại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (step === 'OTP') {
+    return (
+      <div className="auth-page">
+        {/* ---- Left Panel ---- */}
+        <div className="auth-panel">
+          <img src={logoImg} alt="Logo" className="auth-panel__logo" />
+          <h2 className="auth-panel__title">Xác thực tài khoản</h2>
+          <p className="auth-panel__subtitle">
+            Chúng tôi đã gửi mã OTP xác thực gồm 6 chữ số đến địa chỉ email đăng ký của bạn.
+          </p>
+        </div>
+
+        {/* ---- OTP Form ---- */}
+        <div className="auth-form-wrap">
+          <div className="auth-card fade-in visible">
+            <div className="auth-card__head">
+              <h1 className="auth-card__title">Nhập Mã OTP</h1>
+              <p className="auth-card__subtitle">
+                Mã OTP đã được gửi đến email: <strong style={{ color: 'var(--color-primary)' }}>{registeredEmail}</strong>
+              </p>
+            </div>
+
+            {error && (
+              <div className="auth-error-banner">
+                <i className="fa fa-circle-exclamation"></i> {error}
+              </div>
+            )}
+
+            {successMsg && (
+              <div className="auth-success-banner">
+                <i className="fa fa-circle-check"></i> {successMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleOtpSubmit} noValidate>
+              <div className="auth-field">
+                <label className="auth-label" htmlFor="otp-input">Mã xác thực OTP (6 chữ số)</label>
+                <div className="auth-input-wrap">
+                  <i className="fa fa-key auth-input-icon"></i>
+                  <input
+                    id="otp-input"
+                    type="text"
+                    className="auth-input"
+                    placeholder="Nhập 6 số OTP"
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={e => {
+                      setOtpCode(e.target.value.replace(/\D/g, ''));
+                      setError('');
+                    }}
+                    autoFocus
+                    autoComplete="one-time-code"
+                    style={{ paddingLeft: '2.5rem' }}
+                  />
+                </div>
+                <small style={{ display: 'block', marginTop: '0.4rem', color: 'var(--color-text-muted)', fontSize: '0.78rem', lineHeight: '1.4' }}>
+                  * Lưu ý: Nếu không nhận được email, hãy kiểm tra hòm thư rác (Spam) hoặc xem mã OTP được in trực tiếp trong log console của backend.
+                </small>
+              </div>
+
+              <button id="otp-submit" type="submit" className="auth-btn" disabled={loading}>
+                {loading
+                  ? <><div className="auth-spinner"></div> Đang xác thực...</>
+                  : <><i className="fa fa-check-to-slot"></i> Xác Thực & Kích Hoạt</>
+                }
+              </button>
+            </form>
+
+            <div className="auth-footer-text" style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+              <div>
+                {countdown > 0 ? (
+                  <span style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+                    Gửi lại mã sau: <strong>{countdown}s</strong>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={loading}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'var(--color-primary)',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      fontSize: '0.85rem',
+                      textDecoration: 'underline',
+                      padding: 0
+                    }}
+                  >
+                    Gửi lại mã OTP
+                  </button>
+                )}
+              </div>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  setStep('FORM');
+                  setError('');
+                  setSuccessMsg('');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-text-muted)',
+                  cursor: 'pointer',
+                  fontSize: '0.82rem',
+                  textDecoration: 'underline',
+                  padding: 0
+                }}
+              >
+                Quay lại màn hình đăng ký
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-page">

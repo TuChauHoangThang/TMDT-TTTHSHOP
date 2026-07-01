@@ -39,3 +39,6 @@ uploads/*.jpeg
 uploads/*.gif
 uploads/*.webp
 uploads/custom-orders/
+
+### Local Config ###
+src/main/resources/application.properties
