@@ -160,6 +160,16 @@ const CustomerLayout: React.FC = () => {
             </div>
             <span className="nav-text">Thông Báo</span>
           </NavLink>
+
+          <NavLink
+            to="/customer/wallet"
+            className={({ isActive }) =>
+              `customer-nav-item${isActive ? ' active' : ''}`
+            }
+          >
+            <i className="fa-solid fa-wallet" />
+            <span className="nav-text">Ví Của Tôi</span>
+          </NavLink>
         </nav>
 
         {/* Footer */}

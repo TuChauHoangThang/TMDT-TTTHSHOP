@@ -40,6 +40,7 @@ import AdminCustomOrders from './pages/Admin/AdminCustomOrders';
 import AdminCustomers from './pages/Admin/AdminCustomers';
 import AdminContractors from './pages/Admin/AdminContractors';
 import AdminProducts from './pages/Admin/AdminProducts';
+import AdminEscrowDashboard from './pages/Admin/AdminEscrowDashboard';
 import ScrollToTop from './components/ScrollToTop/ScrollToTop';
 import AboutPage from './pages/About/AboutPage';
 import './App.css';
@@ -103,6 +104,7 @@ function App() {
                 <Route path="wishlist" element={<CustomerWishlist />} />
                 <Route path="wallet" element={<Wallet />} />
                 <Route path="notifications" element={<CustomerNotifications />} />
+                <Route path="wallet" element={<Wallet />} />
               </Route>
 
               {/* ── Admin Dashboard ── */}
@@ -114,6 +116,7 @@ function App() {
                 <Route path="customers" element={<AdminCustomers />} />
                 <Route path="contractors" element={<AdminContractors />} />
                 <Route path="products" element={<AdminProducts />} />
+                <Route path="escrow" element={<AdminEscrowDashboard />} />
               </Route>
             </Routes>
             <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick pauseOnHover />

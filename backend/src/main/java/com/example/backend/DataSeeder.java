@@ -47,11 +47,9 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // Chỉ seed users/shops nếu chưa có — KHÔNG bao giờ xóa data cũ
-        if (!userRepository.existsByEmail("admin@test.com")) {
-            System.out.println("[Seeder] Adding missing users and shops...");
-            seedUsersAndShops();
-        }
+        // Luôn kiểm tra và bổ sung các user/shop còn thiếu
+        System.out.println("[Seeder] Checking and adding missing users and shops...");
+        seedUsersAndShops();
 
         // Seed categories nếu chưa có
         if (categoryRepository.count() == 0) {
@@ -256,21 +254,41 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedAdmin() {
-        if (!userRepository.existsByEmail("admin@test.com")) {
-            User u = new User(); u.setFullName("Admin TTTH"); u.setEmail("admin@test.com");
-            u.setPassword(passwordEncoder.encode("Admin@123")); u.setPhone("0900000001");
-            u.setRole(Role.ADMIN); u.setActive(true); userRepository.save(u);
+        User u1 = userRepository.findByEmail("admin@test.com").orElse(null);
+        if (u1 == null) {
+            u1 = new User();
+            u1.setEmail("admin@test.com");
+            u1.setFullName("Admin TTTH");
+            u1.setPhone("0900000001");
+            u1.setRole(Role.ADMIN);
+            u1.setActive(true);
         }
-        if (!userRepository.existsByEmail("admin2@ttth.vn")) {
-            User u = new User(); u.setFullName("Nguyễn Quản Trị"); u.setEmail("admin2@ttth.vn");
-            u.setPassword(passwordEncoder.encode("Admin@123")); u.setPhone("0900000002");
-            u.setRole(Role.ADMIN); u.setActive(true); userRepository.save(u);
+        u1.setPassword(passwordEncoder.encode("Admin@123"));
+        userRepository.save(u1);
+
+        User u2 = userRepository.findByEmail("admin2@ttth.vn").orElse(null);
+        if (u2 == null) {
+            u2 = new User();
+            u2.setEmail("admin2@ttth.vn");
+            u2.setFullName("Nguyễn Quản Trị");
+            u2.setPhone("0900000002");
+            u2.setRole(Role.ADMIN);
+            u2.setActive(true);
         }
-        if (!userRepository.existsByEmail("admin3@ttth.vn")) {
-            User u = new User(); u.setFullName("Trần Hệ Thống"); u.setEmail("admin3@ttth.vn");
-            u.setPassword(passwordEncoder.encode("Admin@123")); u.setPhone("0900000003");
-            u.setRole(Role.ADMIN); u.setActive(true); userRepository.save(u);
+        u2.setPassword(passwordEncoder.encode("Admin@123"));
+        userRepository.save(u2);
+
+        User u3 = userRepository.findByEmail("admin3@ttth.vn").orElse(null);
+        if (u3 == null) {
+            u3 = new User();
+            u3.setEmail("admin3@ttth.vn");
+            u3.setFullName("Trần Hệ Thống");
+            u3.setPhone("0900000003");
+            u3.setRole(Role.ADMIN);
+            u3.setActive(true);
         }
+        u3.setPassword(passwordEncoder.encode("Admin@123"));
+        userRepository.save(u3);
     }
 
     private void seedCustomer() {
