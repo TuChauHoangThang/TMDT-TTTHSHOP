@@ -6,6 +6,7 @@ import com.example.backend.repository.CategoryRepository;
 import com.example.backend.repository.ProductRepository;
 import com.example.backend.service.CategoryService;
 import com.example.backend.service.ProductService;
+import com.example.backend.entity.Product;
 import com.example.backend.entity.User;
 import com.example.backend.entity.Role;
 import com.example.backend.entity.Shop;
@@ -45,11 +46,17 @@ public class DataSeeder implements CommandLineRunner {
         this.passwordEncoder = passwordEncoder;
     }
 
+    private List<Shop> cachedShops = null;
+    private int shopIndex = 0;
+
     @Override
     public void run(String... args) throws Exception {
         // Luôn kiểm tra và bổ sung các user/shop còn thiếu
         System.out.println("[Seeder] Checking and adding missing users and shops...");
         seedUsersAndShops();
+
+        // Cập nhật các sản phẩm chưa có Shop trong DB (chia cho các Seller)
+        distributeExistingProductsToShops();
 
         // Seed categories nếu chưa có
         if (categoryRepository.count() == 0) {
@@ -62,6 +69,49 @@ public class DataSeeder implements CommandLineRunner {
             seedMissingProducts();
             System.out.println("[Seeder] Product check done.");
         }
+    }
+
+    private void distributeExistingProductsToShops() {
+        System.out.println("[Seeder] Distributing existing products without shop to sellers...");
+        List<Shop> shops = shopRepository.findAll();
+        if (shops.isEmpty()) {
+            System.out.println("[Seeder] No shops found to distribute products.");
+            return;
+        }
+
+        List<Product> productsWithoutShop = productRepository.findAll().stream()
+                .filter(p -> p.getShop() == null)
+                .toList();
+
+        if (productsWithoutShop.isEmpty()) {
+            System.out.println("[Seeder] All existing products already have a shop.");
+            return;
+        }
+
+        int index = 0;
+        for (Product p : productsWithoutShop) {
+            Shop shop = shops.get(index % shops.size());
+            p.setShop(shop);
+            p.setStatus(Product.Status.ACTIVE);
+            productRepository.save(p);
+            index++;
+        }
+        System.out.println("[Seeder] Distributed " + index + " products to " + shops.size() + " shops.");
+    }
+
+    private void assignRandomShopToProduct(Long productId) {
+        if (cachedShops == null) {
+            cachedShops = shopRepository.findAll();
+        }
+        if (cachedShops.isEmpty()) return;
+
+        productRepository.findById(productId).ifPresent(p -> {
+            Shop shop = cachedShops.get(shopIndex % cachedShops.size());
+            p.setShop(shop);
+            p.setStatus(Product.Status.ACTIVE); // Luôn giữ trạng thái ACTIVE cho sản phẩm mẫu
+            productRepository.save(p);
+            shopIndex++;
+        });
     }
 
     // ─── USERS & SHOPS ──────────────────────────────────────────────────────────
@@ -672,7 +722,8 @@ public class DataSeeder implements CommandLineRunner {
             " được chế tác từ vật liệu cao cấp, đảm bảo độ bền và thẩm mỹ. " +
             "Phù hợp cho mọi không gian từ hiện đại đến cổ điển. " +
             "Bảo hành 12–24 tháng tùy sản phẩm.");
-        productService.createProduct(req);
+        ProductDto.ProductDetail saved = productService.createProduct(req, null);
+        assignRandomShopToProduct(saved.getId());
     }
 
     /**

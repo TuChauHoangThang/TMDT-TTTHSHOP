@@ -76,36 +76,58 @@ public class ProductController {
     }
 
     /**
-     * Tạo sản phẩm mới (Admin)
+     * Lấy danh sách sản phẩm của Seller (có phân trang)
+     */
+    @GetMapping("/seller")
+    public ResponseEntity<?> getSellerProducts(
+            @RequestHeader("X-Contractor-Id") Long contractorId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        try {
+            return ResponseEntity.ok(productService.getProductsByShop(contractorId, page, size));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Tạo sản phẩm mới (Admin / Seller)
      */
     @PostMapping
-    public ResponseEntity<?> createProduct(@Valid @RequestBody ProductDto.CreateProductRequest request) {
+    public ResponseEntity<?> createProduct(
+            @RequestHeader(value = "X-Contractor-Id", required = false) Long contractorId,
+            @Valid @RequestBody ProductDto.CreateProductRequest request) {
         try {
-            return ResponseEntity.ok(productService.createProduct(request));
+            return ResponseEntity.ok(productService.createProduct(request, contractorId));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
     /**
-     * Cập nhật sản phẩm (Admin)
+     * Cập nhật sản phẩm (Admin / Seller)
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductDto.UpdateProductRequest request) {
+    public ResponseEntity<?> updateProduct(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Contractor-Id", required = false) Long contractorId,
+            @Valid @RequestBody ProductDto.UpdateProductRequest request) {
         try {
-            return ResponseEntity.ok(productService.updateProduct(id, request));
+            return ResponseEntity.ok(productService.updateProduct(id, request, contractorId));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 
     /**
-     * Xóa sản phẩm (Soft delete - Admin)
+     * Xóa sản phẩm (Soft delete - Admin / Seller)
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<?> deleteProduct(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Contractor-Id", required = false) Long contractorId) {
         try {
-            productService.deleteProduct(id);
+            productService.deleteProduct(id, contractorId);
             return ResponseEntity.ok(Map.of("message", "Đã xóa sản phẩm thành công"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

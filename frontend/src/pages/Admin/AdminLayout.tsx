@@ -130,6 +130,14 @@ const AdminLayout: React.FC = () => {
           </NavLink>
 
           <NavLink
+            to="/admin/products/pending"
+            className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+          >
+            <i className="fa-solid fa-square-check" />
+            <span className="nav-text">Duyệt Sản Phẩm</span>
+          </NavLink>
+
+          <NavLink
             to="/admin/escrow"
             className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
           >
