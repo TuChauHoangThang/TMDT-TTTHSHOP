@@ -26,6 +26,7 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (fullName: string, email: string, password: string, phone?: string) => Promise<any>;
+  registerContractor: (fullName: string, email: string, password: string, phone: string, shopName: string, shopDescription: string, shopAddress: string) => Promise<any>;
   verifyOtp: (email: string, otpCode: string) => Promise<void>;
   resendOtp: (email: string) => Promise<void>;
   sendForgotPasswordOtp: (email: string) => Promise<void>;
@@ -122,6 +123,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  // ---- Register Contractor ----
+  const registerContractor = useCallback(async (
+    fullName: string, email: string, password: string, phone: string,
+    shopName: string, shopDescription: string, shopAddress: string
+  ) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/register-contractor`, {
+        fullName, email, password, phone, shopName, shopDescription, shopAddress
+      });
+      return response.data;
+    } catch (error: any) {
+      const msg = error.response?.data || 'Đăng ký nhà thầu thất bại';
+      throw new Error(typeof msg === 'string' ? msg : 'Lỗi đăng ký nhà thầu');
+    }
+  }, []);
+
   // ---- Verify OTP ----
   const verifyOtp = useCallback(async (email: string, otpCode: string) => {
     try {
@@ -196,6 +213,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         register,
+        registerContractor,
         verifyOtp,
         resendOtp,
         sendForgotPasswordOtp,

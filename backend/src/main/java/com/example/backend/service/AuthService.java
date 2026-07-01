@@ -3,8 +3,10 @@ package com.example.backend.service;
 import com.example.backend.dto.auth.AuthResponse;
 import com.example.backend.dto.auth.LoginRequest;
 import com.example.backend.dto.auth.RegisterRequest;
+import com.example.backend.dto.auth.RegisterContractorRequest;
 import com.example.backend.entity.Role;
 import com.example.backend.entity.User;
+import com.example.backend.entity.Shop;
 import com.example.backend.repository.UserRepository;
 import com.example.backend.repository.ShopRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Random;
+import java.math.BigDecimal;
 
 @Service
 public class AuthService {
@@ -58,6 +61,63 @@ public class AuthService {
         emailService.sendOtpEmail(user.getEmail(), otpCode);
 
         return user;
+    }
+
+    public User registerContractor(RegisterContractorRequest request) {
+        java.util.Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+        if (existingUser.isPresent()) {
+            User u = existingUser.get();
+            if (u.isActive()) {
+                throw new RuntimeException("Email đã được sử dụng!");
+            } else {
+                shopRepository.findByOwnerId(u.getId()).ifPresent(shop -> shopRepository.delete(shop));
+                userRepository.delete(u);
+            }
+        }
+
+        User user = new User();
+        user.setFullName(request.getFullName());
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhone());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(Role.CONTRACTOR);
+        user.setActive(false); // Cần Admin duyệt kích hoạt
+
+        userRepository.save(user);
+
+        Shop shop = new Shop();
+        shop.setOwner(user);
+        shop.setName(request.getShopName());
+        shop.setSlug(generateSlug(request.getShopName()));
+        shop.setDescription(request.getShopDescription());
+        shop.setAddress(request.getShopAddress());
+        shop.setRating(BigDecimal.ZERO);
+        shop.setRatingCount(0);
+        shopRepository.save(shop);
+
+        // Gửi email thông báo hồ sơ đang chờ xét duyệt
+        emailService.sendContractorRegistrationEmail(user.getEmail(), user.getFullName(), shop.getName());
+
+        return user;
+    }
+
+    private String generateSlug(String input) {
+        if (input == null || input.isBlank()) {
+            return "shop-" + System.currentTimeMillis();
+        }
+        String temp = input.toLowerCase()
+            .replaceAll("[áàảãạăắằẳẵặâấầẩẫậ]", "a")
+            .replaceAll("[éèẻẽẹêếềểễệ]", "e")
+            .replaceAll("[íìỉĩị]", "i")
+            .replaceAll("[óòỏõọôốồổỗộơớờởỡợ]", "o")
+            .replaceAll("[úùủũụưứừửữự]", "u")
+            .replaceAll("[ýỳỷỹỵ]", "y")
+            .replaceAll("đ", "d")
+            .replaceAll("[^a-z0-9\\s-]", "")
+            .replaceAll("\\s+", "-")
+            .replaceAll("-+", "-")
+            .trim();
+        return temp + "-" + System.currentTimeMillis();
     }
 
     public AuthResponse verifyOtp(String email, String otpCode) {

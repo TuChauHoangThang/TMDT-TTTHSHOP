@@ -384,6 +384,36 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Tab switcher */
+.auth-tabs {
+  display: flex;
+  background: #f1f3f1;
+  border-radius: var(--radius-full);
+  padding: 4px;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--color-border);
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: none;
+  background: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  transition: all 0.25s ease;
+  text-align: center;
+}
+
+.auth-tab.active {
+  background: var(--color-surface);
+  color: var(--color-primary-dark);
+  box-shadow: var(--shadow-sm);
+}
+
 /* Responsive: stack on mobile */
 @media (max-width: 768px) {
   .auth-page { grid-template-columns: 1fr; }
