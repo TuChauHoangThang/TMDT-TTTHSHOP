@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminService } from '../../services/adminService';
 import type { AdminStats } from '../../services/adminService';
+import { AdminCharts } from './AdminCharts';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(n);
@@ -171,6 +172,11 @@ const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Visual Analytics Charts ── */}
+      <AdminCharts data={stats.chartData || []} />
+
+      <div style={{ height: '2rem' }} />
 
       {/* ── Order breakdown ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>

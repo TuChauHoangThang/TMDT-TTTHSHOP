@@ -187,22 +187,33 @@ const ProductDetail: React.FC = () => {
             </p>
 
             <div className="pd-status">
-              Tình trạng: <strong>{product.status === 'ACTIVE' ? 'Còn hàng trong kho' : 'Tạm hết hàng'}</strong>
+              Tình trạng: <strong style={{ color: (product.stock !== undefined && product.stock <= 0) ? 'var(--color-sale)' : 'green' }}>
+                {product.status === 'ACTIVE' && (product.stock === undefined || product.stock > 0) ? 'Còn hàng trong kho' : 'Tạm hết hàng'}
+              </strong>
+              {product.stock !== undefined && product.stock > 0 && (
+                <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginLeft: '8px' }}>
+                  ({product.stock} sản phẩm có sẵn)
+                </span>
+              )}
             </div>
 
             <div className="pd-actions">
               <div className="pd-quantity">
-                <button onClick={() => setQuantity(Math.max(1, quantity - 1))}><i className="fa fa-minus"></i></button>
-                <input type="number" value={quantity} readOnly />
-                <button onClick={() => setQuantity(quantity + 1)}><i className="fa fa-plus"></i></button>
+                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={product.stock !== undefined && product.stock <= 0}>
+                  <i className="fa fa-minus"></i>
+                </button>
+                <input type="number" value={product.stock !== undefined && product.stock <= 0 ? 0 : quantity} readOnly />
+                <button onClick={() => setQuantity(Math.min(product.stock ?? 99, quantity + 1))} disabled={product.stock !== undefined && (product.stock <= 0 || quantity >= product.stock)}>
+                  <i className="fa fa-plus"></i>
+                </button>
               </div>
               
               <button 
                 onClick={handleAddToCart} 
                 className="btn btn--primary pd-btn-add"
-                disabled={product.status !== 'ACTIVE' || product.priceContact}
+                disabled={product.status !== 'ACTIVE' || product.priceContact || (product.stock !== undefined && product.stock <= 0)}
               >
-                <i className="fa fa-bag-shopping"></i> Thêm Vào Giỏ Hàng
+                <i className="fa fa-bag-shopping"></i> {product.stock !== undefined && product.stock <= 0 ? 'Tạm Hết Hàng' : 'Thêm Vào Giỏ Hàng'}
               </button>
               
               <button className="btn btn--outline pd-btn-wishlist" onClick={handleToggleFavorite}>

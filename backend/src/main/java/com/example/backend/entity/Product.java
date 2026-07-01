@@ -73,6 +73,9 @@ public class Product {
     @Column(length = 20, nullable = false)
     private Status status = Status.ACTIVE;
 
+    @Column(name = "stock")
+    private Integer stock = 20;
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("sortOrder ASC, id ASC")
     private List<ProductImage> images = new ArrayList<>();
@@ -134,6 +137,8 @@ public class Product {
     public void setRatingCount(Integer ratingCount) { this.ratingCount = ratingCount; }
     public Status getStatus() { return status; }
     public void setStatus(Status status) { this.status = status; }
+    public Integer getStock() { return stock; }
+    public void setStock(Integer stock) { this.stock = stock; }
     public List<ProductImage> getImages() { return images; }
     public void setImages(List<ProductImage> images) { this.images = images; }
     public List<ProductBadge> getBadges() { return badges; }

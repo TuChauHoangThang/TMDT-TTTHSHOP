@@ -27,4 +27,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o WHERE o.createdAt BETWEEN :start AND :end")
     BigDecimal sumRevenueBetween(java.time.LocalDateTime start, java.time.LocalDateTime end);
+
+    @Query("SELECT MIN(o.createdAt) FROM Order o")
+    java.time.LocalDateTime findMinCreatedAt();
 }

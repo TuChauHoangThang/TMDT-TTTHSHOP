@@ -15,6 +15,7 @@ export interface AdminStats {
   completedCustomOrders: number;
   totalRevenue: number;
   totalProducts: number;
+  chartData?: { date: string; orders: number; revenue: number }[];
 }
 
 export interface AdminUser {

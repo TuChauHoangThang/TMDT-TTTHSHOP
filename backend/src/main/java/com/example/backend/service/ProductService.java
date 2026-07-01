@@ -118,6 +118,8 @@ public class ProductService {
         p.setRatingStars(dto.getRatingStars() != null ? dto.getRatingStars() : BigDecimal.valueOf(5.0));
         p.setRatingCount(dto.getRatingCount() != null ? dto.getRatingCount() : 0);
 
+        p.setStatus(Product.Status.ACTIVE);
+        p.setStock(dto.getStock() != null ? dto.getStock() : 20);
         if (contractorId != null) {
             Shop shop = shopRepository.findByOwnerId(contractorId)
                     .orElseThrow(() -> new RuntimeException("Tài khoản nhà thầu chưa cấu hình cửa hàng"));
@@ -196,6 +198,7 @@ public class ProductService {
         if (dto.getPriceContact() != null) p.setPriceContact(dto.getPriceContact());
         if (dto.getRatingStars() != null) p.setRatingStars(dto.getRatingStars());
         if (dto.getRatingCount() != null) p.setRatingCount(dto.getRatingCount());
+        if (dto.getStock() != null) p.setStock(dto.getStock());
 
         // Update Images
         if (dto.getImageUrls() != null) {
