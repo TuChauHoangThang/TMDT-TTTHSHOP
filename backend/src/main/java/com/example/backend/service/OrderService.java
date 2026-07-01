@@ -48,17 +48,26 @@ public class OrderService {
 
         for (CartItem cartItem : cartItems) {
             Product product = cartItem.getProduct();
+            
+            int requestedQty = cartItem.getQuantity();
+            if (product.getStock() != null && product.getStock() < requestedQty) {
+                throw new RuntimeException("Sản phẩm '" + product.getName() + "' không đủ số lượng trong kho! Hiện chỉ còn " + product.getStock() + " sản phẩm.");
+            }
+            if (product.getStock() != null) {
+                product.setStock(product.getStock() - requestedQty);
+            }
+            
             BigDecimal price = product.getPriceCurrent() != null ? product.getPriceCurrent() : BigDecimal.ZERO;
             
             OrderItem orderItem = new OrderItem();
             orderItem.setOrder(order);
             orderItem.setProduct(product);
-            orderItem.setQuantity(cartItem.getQuantity());
+            orderItem.setQuantity(requestedQty);
             orderItem.setPrice(price);
 
             order.getItems().add(orderItem);
 
-            BigDecimal itemTotal = price.multiply(BigDecimal.valueOf(cartItem.getQuantity()));
+            BigDecimal itemTotal = price.multiply(BigDecimal.valueOf(requestedQty));
             totalAmount = totalAmount.add(itemTotal);
         }
 

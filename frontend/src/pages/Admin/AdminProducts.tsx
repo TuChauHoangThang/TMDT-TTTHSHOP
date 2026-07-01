@@ -25,6 +25,7 @@ interface AdminProduct {
   ratingCount: number;
   primaryImage: string;
   imageCount: number;
+  stock?: number;
 }
 
 interface ProductImage {
@@ -52,6 +53,8 @@ const AdminProducts: React.FC = () => {
   const [newImageUrl, setNewImageUrl] = useState('');
   const [savingId, setSavingId] = useState<number | null>(null);
   const [bulkUrls, setBulkUrls] = useState('');
+  const [stockVal, setStockVal] = useState<number>(0);
+  const [savingStock, setSavingStock] = useState(false);
 
   // ── Load products ────────────────────────────────────────────
   const loadProducts = useCallback(async () => {
@@ -90,6 +93,7 @@ const AdminProducts: React.FC = () => {
     setEditingProduct(product);
     setBulkUrls('');
     setNewImageUrl('');
+    setStockVal(product.stock ?? 20);
     setImagesLoading(true);
     try {
       const res = await api().get<ProductImage[]>(`/products/${product.id}/images`);
@@ -99,6 +103,25 @@ const AdminProducts: React.FC = () => {
       toast.error('Không thể tải ảnh sản phẩm');
     } finally {
       setImagesLoading(false);
+    }
+  };
+
+  const handleSaveStock = async () => {
+    if (!editingProduct) return;
+    setSavingStock(true);
+    try {
+      const token = localStorage.getItem('auth_token');
+      await axios.put(
+        `http://localhost:8080/api/products/${editingProduct.id}`,
+        { stock: stockVal },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      setProducts(prev => prev.map(p => p.id === editingProduct.id ? { ...p, stock: stockVal } : p));
+      toast.success('Đã cập nhật số lượng tồn kho');
+    } catch {
+      toast.error('Cập nhật tồn kho thất bại');
+    } finally {
+      setSavingStock(false);
     }
   };
 
@@ -233,6 +256,7 @@ const AdminProducts: React.FC = () => {
                   <th>ID</th>
                   <th>Ảnh</th>
                   <th>Tên Sản Phẩm</th>
+                  <th>Tồn Kho</th>
                   <th>Danh Mục</th>
                   <th>Giá</th>
                   <th>Rating</th>
@@ -264,6 +288,9 @@ const AdminProducts: React.FC = () => {
                       </div>
                       <div style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{p.slug}</div>
                     </td>
+                    <td style={{ fontSize: '0.82rem', fontWeight: 600, color: p.stock === 0 ? 'var(--color-sale)' : '#475569' }}>
+                      {p.stock ?? 20}
+                    </td>
                     <td style={{ fontSize: '0.82rem' }}>{p.categoryName}</td>
                     <td style={{ fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
                       {p.priceContact
@@ -278,7 +305,7 @@ const AdminProducts: React.FC = () => {
                     </td>
                     <td>
                       <button className="admin-btn admin-btn-primary admin-btn-sm" onClick={() => openEdit(p)}>
-                        <i className="fa-solid fa-images" /> Sửa ảnh
+                        <i className="fa-solid fa-pen-to-square" /> Sửa ảnh & kho
                       </button>
                     </td>
                   </tr>
@@ -310,6 +337,26 @@ const AdminProducts: React.FC = () => {
                 </div>
               ) : (
                 <>
+                  {/* Cập nhật Tồn kho */}
+                  <div style={{ marginBottom: 20, background: '#f8fafc', padding: '14px 16px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                    <div style={{ fontWeight: 700, marginBottom: 8, fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--color-primary)' }}>
+                      <i className="fa-solid fa-warehouse" />
+                      Quản lý kho hàng (Tồn kho sản phẩm)
+                    </div>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <input
+                        type="number"
+                        min="0"
+                        style={{ width: 100, padding: '6px 12px', border: '1px solid #cbd5e1', borderRadius: 6, fontSize: '0.85rem', outline: 'none' }}
+                        value={stockVal}
+                        onChange={e => setStockVal(Math.max(0, parseInt(e.target.value) || 0))}
+                      />
+                      <button className="admin-btn admin-btn-primary admin-btn-sm" onClick={handleSaveStock} disabled={savingStock} style={{ height: '32px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        {savingStock ? <i className="fa-solid fa-spinner fa-spin" /> : <i className="fa-solid fa-floppy-disk" />} Cập Nhật
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Danh sách ảnh */}
                   <div style={{ fontWeight: 700, marginBottom: 10, fontSize: '0.875rem' }}>
                     Ảnh hiện có ({images.length})

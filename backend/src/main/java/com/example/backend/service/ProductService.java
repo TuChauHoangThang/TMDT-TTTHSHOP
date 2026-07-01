@@ -100,6 +100,7 @@ public class ProductService {
         p.setRatingStars(dto.getRatingStars());
         p.setRatingCount(dto.getRatingCount() != null ? dto.getRatingCount() : 0);
         p.setStatus(Product.Status.ACTIVE);
+        p.setStock(dto.getStock() != null ? dto.getStock() : 20);
 
         // Images
         if (dto.getImageUrls() != null && !dto.getImageUrls().isEmpty()) {
@@ -148,6 +149,7 @@ public class ProductService {
         if (dto.getRatingStars() != null) p.setRatingStars(dto.getRatingStars());
         if (dto.getRatingCount() != null) p.setRatingCount(dto.getRatingCount());
         if (dto.getStatus() != null) p.setStatus(Product.Status.valueOf(dto.getStatus()));
+        if (dto.getStock() != null) p.setStock(dto.getStock());
 
         // Update Images
         if (dto.getImageUrls() != null) {

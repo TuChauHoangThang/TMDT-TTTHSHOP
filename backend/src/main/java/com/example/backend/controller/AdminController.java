@@ -108,6 +108,48 @@ public class AdminController {
         stats.put("totalRevenue", totalRevenue);
         stats.put("totalProducts", totalProducts);
 
+        // ─── Generate Daily Stats for Chart ───
+        java.time.LocalDateTime chartStart = start;
+        java.time.LocalDateTime chartEnd = end;
+        if (chartStart == null) {
+            java.time.LocalDateTime minCreated = orderRepository.findMinCreatedAt();
+            if (minCreated != null) {
+                chartStart = minCreated.toLocalDate().atStartOfDay();
+            } else {
+                chartStart = java.time.LocalDateTime.now().minusDays(29).toLocalDate().atStartOfDay();
+            }
+        }
+        if (chartEnd == null) {
+            chartEnd = java.time.LocalDateTime.now();
+        }
+
+        List<Map<String, Object>> chartData = new ArrayList<>();
+        java.time.LocalDate cS = chartStart.toLocalDate();
+        java.time.LocalDate cE = chartEnd.toLocalDate();
+
+        // Limit to max 60 days to keep the chart readable while showing history
+        if (java.time.temporal.ChronoUnit.DAYS.between(cS, cE) > 60) {
+            cS = cE.minusDays(59);
+        }
+
+        while (!cS.isAfter(cE)) {
+            java.time.LocalDateTime ds = cS.atStartOfDay();
+            java.time.LocalDateTime de = cS.atTime(23, 59, 59);
+
+            long count = orderRepository.countByCreatedAtBetween(ds, de);
+            BigDecimal rev = orderRepository.sumRevenueBetween(ds, de);
+            if (rev == null) rev = BigDecimal.ZERO;
+
+            Map<String, Object> day = new LinkedHashMap<>();
+            day.put("date", cS.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM")));
+            day.put("orders", count);
+            day.put("revenue", rev);
+
+            chartData.add(day);
+            cS = cS.plusDays(1);
+        }
+        stats.put("chartData", chartData);
+
         return ResponseEntity.ok(stats);
     }
 
@@ -357,6 +399,7 @@ public class AdminController {
             m.put("priceOriginal", p.getPriceOriginal());
             m.put("priceContact", p.getPriceContact());
             m.put("status", p.getStatus().name());
+            m.put("stock", p.getStock());
             m.put("ratingStars", p.getRatingStars());
             m.put("ratingCount", p.getRatingCount());
             // Ảnh đại diện (primary)

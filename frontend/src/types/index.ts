@@ -13,6 +13,7 @@ export interface Product {
   ratingStars: number;
   badges: string[];
   status?: string;
+  stock?: number;
 }
 
 export interface Category {

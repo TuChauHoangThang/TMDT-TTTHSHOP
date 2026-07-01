@@ -102,6 +102,7 @@ public class ProductDto {
         private Integer ratingCount;
         private List<String> badges;
         private String status;
+        private Integer stock;
         private LocalDateTime createdAt;
 
         public static ProductSummary from(Product p) {
@@ -121,6 +122,7 @@ public class ProductDto {
                     ? p.getBadges().stream().map(b -> b.getBadgeLabel()).toList()
                     : Collections.emptyList();
             s.status = p.getStatus().name();
+            s.stock = p.getStock();
             s.createdAt = p.getCreatedAt();
             return s;
         }
@@ -139,6 +141,7 @@ public class ProductDto {
         public Integer getRatingCount() { return ratingCount; }
         public List<String> getBadges() { return badges; }
         public String getStatus() { return status; }
+        public Integer getStock() { return stock; }
         public LocalDateTime getCreatedAt() { return createdAt; }
     }
 
@@ -160,6 +163,7 @@ public class ProductDto {
         private Integer ratingCount;
         private List<String> badges;
         private String status;
+        private Integer stock;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -183,6 +187,7 @@ public class ProductDto {
                     ? p.getBadges().stream().map(b -> b.getBadgeLabel()).toList()
                     : Collections.emptyList();
             d.status = p.getStatus().name();
+            d.stock = p.getStock();
             d.createdAt = p.getCreatedAt();
             d.updatedAt = p.getUpdatedAt();
             return d;
@@ -203,6 +208,7 @@ public class ProductDto {
         public Integer getRatingCount() { return ratingCount; }
         public List<String> getBadges() { return badges; }
         public String getStatus() { return status; }
+        public Integer getStock() { return stock; }
         public LocalDateTime getCreatedAt() { return createdAt; }
         public LocalDateTime getUpdatedAt() { return updatedAt; }
     }
@@ -230,9 +236,9 @@ public class ProductDto {
         private BigDecimal priceOriginal;
         private Boolean priceContact = false;
 
-        @DecimalMin(value = "1.0") @DecimalMax(value = "5.0")
         private BigDecimal ratingStars;
         private Integer ratingCount;
+        private Integer stock;
 
         /** Danh sách URL ảnh (ảnh đầu tiên là ảnh đại diện) */
         private List<String> imageUrls;
@@ -263,6 +269,8 @@ public class ProductDto {
         public void setImageUrls(List<String> imageUrls) { this.imageUrls = imageUrls; }
         public List<String> getBadges() { return badges; }
         public void setBadges(List<String> badges) { this.badges = badges; }
+        public Integer getStock() { return stock; }
+        public void setStock(Integer stock) { this.stock = stock; }
     }
 
     /**
@@ -284,6 +292,7 @@ public class ProductDto {
         private List<String> imageUrls;
         private List<String> badges;
         private String status; // "ACTIVE" hoặc "INACTIVE"
+        private Integer stock;
 
         // Getters & Setters
         public String getName() { return name; }
@@ -308,6 +317,8 @@ public class ProductDto {
         public void setBadges(List<String> badges) { this.badges = badges; }
         public String getStatus() { return status; }
         public void setStatus(String status) { this.status = status; }
+        public Integer getStock() { return stock; }
+        public void setStock(Integer stock) { this.stock = stock; }
     }
 
     // ==================== PAGED RESPONSE ====================
